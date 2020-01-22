@@ -1,0 +1,7 @@
+load("@bzlws//:index.bzl", "bzlw_copy")
+
+bzlw_copy(
+    name = "copy_example_txt",
+    srcs = ["example.txt"],
+    out_dir = "ignored_folder",
+)
