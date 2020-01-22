@@ -24,7 +24,7 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     srcs_list_str = ""
 
     for file in ctx.files.srcs:
-        srcs_list_str += "\"{}\"".format(file.path)
+        srcs_list_str += "\"{}\" ".format(file.path)
 
     contents = _sh_binary_contents.format(
         # tool = ctx.executable.tool.path,
@@ -51,7 +51,7 @@ _bzlws_tool_shell_script_src = rule(
     },
 )
 
-def bzlw_copy(name = None, srcs = None, out_dir = None, visibility = None):
+def bzlws_copy(name = None, srcs = None, out_dir = None, visibility = None):
 
     if out_dir.startswith("/"):
         fail("out_dir cannot start with '/'")
