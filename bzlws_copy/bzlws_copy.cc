@@ -9,6 +9,13 @@
 
 namespace fs = std::filesystem;
 
+bool force_remove(const fs::path& path, std::error_code& ec) noexcept {
+	fs::permissions(path, fs::perms::others_write, ec);
+	if(ec) return false;
+
+	return fs::remove(path, ec);
+}
+
 void trim_ws(std::string& s) {
 	using std::isspace;
 	using std::find_if;
@@ -156,25 +163,34 @@ int main(int argc, char* argv[]) {
 
 		std::exit(1);
 	}
+	
+	auto wsDirSz = workspace_dir.generic_string().size();
 
 	for(auto src_path : src_paths) {
 		auto new_src_path = out_path / src_path.filename();
+		std::error_code ec;
 
 		std::cout
-			<< fs::relative(src_path, workspace_dir).generic_string() << " -> "
+			<< src_path.generic_string().substr(wsDirSz + 1) << " -> "
 			<< fs::relative(new_src_path.string(), workspace_dir).generic_string()
 			<< std::endl;
 
 		if(fs::exists(new_src_path)) {
-			fs::remove(new_src_path);
+			force_remove(new_src_path, ec);
+			if(ec) {
+				std::cerr
+					<< "Unable to remove \"" << new_src_path.generic_string() << "\" - "
+					<< ec.message() << std::endl;
+				std::exit(1);
+			}
 		}
 
-		std::error_code ec;
 		fs::copy_file(src_path, new_src_path, ec);
 		if(ec) {
 			std::cerr
-				<< "[ERROR] Failed to copy " << src_path.string() << " -> "
-				<< new_src_path.string() << std::endl << ec.message() << std::endl;
+				<< "[ERROR] Failed to copy " << src_path.generic_string() << " -> "
+				<< new_src_path.generic_string() << std::endl << ec.message()
+				<< std::endl;
 			std::exit(1);
 		}
 	}
