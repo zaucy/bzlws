@@ -11,8 +11,6 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     args.add_all(ctx.files.srcs)
     args.add(ctx.attr.out_dir)
 
-    print(args)
-
     ctx.actions.run(
         outputs = [src],
         inputs = ctx.files.srcs,
