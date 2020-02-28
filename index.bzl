@@ -7,9 +7,9 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     args = ctx.actions.args()
 
     args.add("--tool", ctx.attr.tool)
-    args.add("--output",    src)
+    args.add("--output", src)
     args.add_all(ctx.files.srcs)
-    args.add(ctx.attr.out_dir)
+    args.add(ctx.attr.out)
 
     ctx.actions.run(
         outputs = [src],
@@ -24,7 +24,7 @@ _bzlws_tool_shell_script_src = rule(
     implementation = _bzlws_tool_shell_script_src_impl,
     attrs = {
         "srcs": attr.label_list(mandatory = True, allow_files = True),
-        "out_dir": attr.string(mandatory = True),
+        "out": attr.string(mandatory = True),
         "tool": attr.string(mandatory = True),
         "_generator": attr.label(
             default = "@bzlws//generator",
@@ -34,16 +34,16 @@ _bzlws_tool_shell_script_src = rule(
     },
 )
 
-def bzlws_copy(name = None, srcs = None, out_dir = None, visibility = None):
+def bzlws_copy(name = None, srcs = None, out = None, visibility = None):
 
-    if out_dir.startswith("/"):
-        fail("out_dir cannot start with '/'")
+    if out.startswith("/"):
+        fail("out cannot start with '/'")
 
     sh_script_name = name + _sh_binary_suffix
     _bzlws_tool_shell_script_src(
         name = sh_script_name,
         srcs = srcs,
-        out_dir = out_dir,
+        out = out,
         tool = "bzlws/bzlws_copy/bzlws_copy.exe",
         visibility = ["//visibility:private"],
     )
@@ -53,5 +53,27 @@ def bzlws_copy(name = None, srcs = None, out_dir = None, visibility = None):
         srcs = [":" + sh_script_name],
         deps = ["@bazel_tools//tools/bash/runfiles"],
         data = ["@bzlws//bzlws_copy:bzlws_copy"] + srcs,
+        visibility = visibility,
+    )
+
+def bzlws_link(name = None, srcs = None, out = None, visibility = None):
+
+    if out.startswith("/"):
+        fail("out cannot start with '/'")
+
+    sh_script_name = name + _sh_binary_suffix
+    _bzlws_tool_shell_script_src(
+        name = sh_script_name,
+        srcs = srcs,
+        out = out,
+        tool = "bzlws/bzlws_link/bzlws_link.exe",
+        visibility = ["//visibility:private"],
+    )
+
+    native.sh_binary(
+        name = name,
+        srcs = [":" + sh_script_name],
+        deps = ["@bazel_tools//tools/bash/runfiles"],
+        data = ["@bzlws//bzlws_link:bzlws_link"] + srcs,
         visibility = visibility,
     )

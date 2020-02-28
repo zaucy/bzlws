@@ -1,7 +1,37 @@
-load("@bzlws//:index.bzl", "bzlw_copy")
+load("@bzlws//:index.bzl", "bzlws_copy", "bzlws_link")
 
-bzlw_copy(
+bzlws_copy(
     name = "copy_example_txt",
     srcs = ["example.txt"],
-    out_dir = "ignored_folder",
+    out = "ignored_folder",
+)
+
+bzlws_link(
+    name = "link_example_txt",
+    srcs = ["example.txt"],
+    out = "ignored_folder",
+)
+
+bzlws_copy(
+    name = "copy_error_example_txt",
+    srcs = ["example.txt"],
+    out = "folder",
+)
+
+bzlws_copy(
+    name = "link_error_example_txt",
+    srcs = ["example.txt"],
+    out = "folder",
+)
+
+bzlws_copy(
+    name = "substitutions_example1",
+    srcs = ["example.txt"],
+    out = "ignored_folder/__{BASENAME}__{EXT}",
+)
+
+bzlws_copy(
+    name = "substitutions_example2",
+    srcs = ["example.txt"],
+    out = "ignored_folder/{EXTNAME}__{FILENAME}",
 )

@@ -8,12 +8,10 @@ _copts = select({
     "//conditions:default": _gcc_copts,
 })
 
-cc_binary(
-    name = "bzlws_copy",
-    visibility = ["//visibility:public"],
-    srcs = ["bzlws_copy.cc"],
+cc_library(
+    name = "bzlws_tool_lib",
+    visibility = ["//:__subpackages__"],
+    hdrs = ["bzlws_tool_lib.hh"],
+    srcs = ["bzlws_tool_lib.cc"],
     copts = _copts,
-    deps = [
-        "//bzlws_tool_lib",
-    ],
 )
