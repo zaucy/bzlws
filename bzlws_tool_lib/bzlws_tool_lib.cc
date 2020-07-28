@@ -4,6 +4,36 @@ namespace fs = bzlws_tool_lib::fs;
 using bzlws_tool_lib::bazelignore_parse_results;
 using bzlws_tool_lib::src_info;
 
+namespace {
+	struct bazel_label_info {
+		std::string name;
+		std::string package;
+		std::string workspace_name;
+	};
+
+	static bazel_label_info parse_label_string
+		( const std::string& label_str
+		)
+	{
+		bazel_label_info info;
+		auto ws_name_end = label_str.find("//");
+
+		if(ws_name_end == std::string::npos) return info;
+		info.workspace_name = label_str.substr(1, ws_name_end - 1);
+
+		auto package_name_end = label_str.find_last_of(":");
+		if(package_name_end == std::string::npos) return info;
+		info.package = label_str.substr(
+			ws_name_end + 2,
+			package_name_end - (ws_name_end + 2)
+		);
+		info.name = label_str.substr(package_name_end + 1);
+
+		return info;
+	}
+}
+
+
 bool bzlws_tool_lib::force_remove
 	( const fs::path& path
 	, std::error_code& ec
@@ -128,12 +158,23 @@ fs::path bzlws_tool_lib::get_src_out_path
 	( const fs::path&  workspace_dir
 	, int              argc
 	, char**           argv
+	, std::string      owner_label_str
 	, fs::path         src_path
 	)
 {
+	auto label = parse_label_string(owner_label_str);
+
 	auto out_dir_input = std::string(argv[argc - 1]);
 	auto ext_str = src_path.extension().string();
 	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
+
+	substr_str(out_dir_input, "{BAZEL_LABEL_NAME}", label.name);
+	substr_str(out_dir_input, "{BAZEL_LABEL_PACKAGE}", label.package);
+	substr_str(out_dir_input, "{BAZEL_LABEL_WORKSPACE_NAME}",
+		label.workspace_name);
+	substr_str(out_dir_input, "{BAZEL_FULL_LABEL}",
+		label.workspace_name + "/" + label.package + "/" + label.name);
+	substr_str(out_dir_input, "{BAZEL_LABEL}", label.package + "/" + label.name);
 
 	substr_str(out_dir_input, "{EXT}", ext_str);
 	substr_str(out_dir_input, "{EXTNAME}", extname);
@@ -169,8 +210,9 @@ std::vector<src_info> bzlws_tool_lib::get_srcs_info
 {
 	std::vector<src_info> srcs_info;
 
-	for(int i=1; argc-1 > i; ++i) {
-		auto arg = std::string(argv[i]);
+	for(int i=1; argc-1 > i; i += 2) {
+		auto target_str = std::string(argv[i]);
+		auto arg = std::string(argv[i + 1]);
 		auto src_path = workspace_dir / arg;
 
 		if(!fs::exists(src_path)) {
@@ -178,7 +220,13 @@ std::vector<src_info> bzlws_tool_lib::get_srcs_info
 			std::exit(1);
 		}
 
-		auto src_out_path = get_src_out_path(workspace_dir, argc, argv, src_path);
+		auto src_out_path = get_src_out_path(
+			workspace_dir,
+			argc,
+			argv,
+			target_str,
+			src_path
+		);
 
 		srcs_info.push_back({src_path, src_out_path});
 	}

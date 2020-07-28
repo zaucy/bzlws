@@ -52,6 +52,7 @@ namespace bzlws_tool_lib {
 		( const fs::path&  workspace_dir
 		, int              argc
 		, char**           argv
+		, std::string      owner_label_str
 		, fs::path         src_path
 		);
 

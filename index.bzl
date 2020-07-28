@@ -1,5 +1,14 @@
 _sh_binary_suffix = "__bzlws_sh_binary_src"
 
+def _get_full_label_string(label):
+    if not label:
+        return "@"
+    
+    return "@" + label.workspace_name + "//" + label.package + ":" + label.name 
+
+def _file_owner_label_pair(file):
+    return [_get_full_label_string(file.owner), file.path]
+
 def _bzlws_tool_shell_script_src_impl(ctx):
     name = ctx.attr.name
     src_filename = name[:-len(_sh_binary_suffix)] + ".sh"
@@ -8,7 +17,7 @@ def _bzlws_tool_shell_script_src_impl(ctx):
 
     args.add("--tool", ctx.attr.tool)
     args.add("--output", src)
-    args.add_all(ctx.files.srcs)
+    args.add_all(ctx.files.srcs, map_each = _file_owner_label_pair)
     args.add(ctx.attr.out)
 
     ctx.actions.run(

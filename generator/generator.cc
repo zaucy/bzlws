@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <string>
+#include <array>
 #include <vector>
 #include <iostream>
 #include <fstream>
@@ -22,11 +23,9 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
 
 
 int main(int argc, char* argv[]) {
-
-
 	std::string output;
 	std::string tool;
-	std::vector<std::string> paths;
+	std::vector<std::array<std::string, 2>> paths;
 	std::string out_path = std::string(argv[argc-1]);
 
 	for(int i=1; argc-1 > i; ++i) {
@@ -38,7 +37,12 @@ int main(int argc, char* argv[]) {
 		if(arg == "--tool") {
 			tool = std::string(argv[++i]);
 		} else {
-			paths.push_back(arg);
+			if(i + 1 > argc) {
+				std::cerr << "Uneven pairs of inputs" << std::endl;
+				return 1;
+			}
+
+			paths.push_back({arg, std::string(argv[++i])});
 		}
 	}
 
@@ -61,8 +65,8 @@ int main(int argc, char* argv[]) {
 
 	out << SCRIPT_SRC_START << "$(rlocation " << tool << ") \\\n";
 
-	for(const auto& path : paths) {
-		out << "  " << path << " \\\n";
+	for(const auto& [target_str, path] : paths) {
+		out << "  " << target_str << " " << path << " \\\n";
 	}
 
 	out << "  $BUILD_WORKSPACE_DIRECTORY/" << out_path << "\n";
