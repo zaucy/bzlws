@@ -58,6 +58,7 @@ namespace bzlws_tool_lib {
 
 	std::vector<src_info> get_srcs_info
 		( const fs::path&  workspace_dir
+		, bool&            out_force
 		, int              argc
 		, char**           argv
 		);

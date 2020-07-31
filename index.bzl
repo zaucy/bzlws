@@ -16,6 +16,9 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     args = ctx.actions.args()
 
     args.add("--tool", ctx.attr.tool)
+    if ctx.attr.force == True:
+        args.add("--force")
+
     args.add("--output", src)
     args.add_all(ctx.files.srcs, map_each = _file_owner_label_pair)
     args.add(ctx.attr.out)
@@ -35,6 +38,7 @@ _bzlws_tool_shell_script_src = rule(
         "srcs": attr.label_list(mandatory = True, allow_files = True),
         "out": attr.string(mandatory = True),
         "tool": attr.string(mandatory = True),
+        "force": attr.bool(default = False),
         "_generator": attr.label(
             default = "@bzlws//generator",
             executable = True,
@@ -43,7 +47,7 @@ _bzlws_tool_shell_script_src = rule(
     },
 )
 
-def bzlws_copy(name = None, srcs = None, out = None, visibility = None):
+def bzlws_copy(name = None, srcs = None, out = None, force = None, visibility = None):
 
     if out.startswith("/"):
         fail("out cannot start with '/'")
@@ -53,6 +57,7 @@ def bzlws_copy(name = None, srcs = None, out = None, visibility = None):
         name = sh_script_name,
         srcs = srcs,
         out = out,
+        force = force,
         tool = "bzlws/bzlws_copy/bzlws_copy.exe",
         visibility = ["//visibility:private"],
     )
@@ -65,7 +70,7 @@ def bzlws_copy(name = None, srcs = None, out = None, visibility = None):
         visibility = visibility,
     )
 
-def bzlws_link(name = None, srcs = None, out = None, visibility = None):
+def bzlws_link(name = None, srcs = None, out = None, force = None, visibility = None):
 
     if out.startswith("/"):
         fail("out cannot start with '/'")
@@ -75,6 +80,7 @@ def bzlws_link(name = None, srcs = None, out = None, visibility = None):
         name = sh_script_name,
         srcs = srcs,
         out = out,
+        force = force,
         tool = "bzlws/bzlws_link/bzlws_link.exe",
         visibility = ["//visibility:private"],
     )

@@ -3,9 +3,10 @@
 int main(int argc, char* argv[]) {
 	using namespace bzlws_tool_lib;
 
+	bool force = false;
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto srcs_info = get_srcs_info(workspace_dir, argc, argv);
+	auto srcs_info = get_srcs_info(workspace_dir, force, argc, argv);
 	
 	for(const auto& info : srcs_info) {
 		bzlignore.assert_ignored_path(info.new_src_path);
@@ -28,10 +29,11 @@ int main(int argc, char* argv[]) {
 				std::exit(1);
 			}
 
-			if(!existing_is_symlink) {
+			if(!existing_is_symlink && !force) {
 				std::cerr
 					<< "[ERROR] Cannot create symlink since \""
-					<< new_src_path.generic_string() << "\" exists and is a non-symlink"
+					<< new_src_path.generic_string() << "\" exists and is a non-symlink. "
+					<< "Use --force to override this behaviour."
 					<< std::endl;
 				std::exit(1);
 			}

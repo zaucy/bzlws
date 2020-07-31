@@ -3,9 +3,10 @@
 int main(int argc, char* argv[]) {
 	using namespace bzlws_tool_lib;
 
+	bool force = false;
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto srcs_info = get_srcs_info(workspace_dir, argc, argv);
+	auto srcs_info = get_srcs_info(workspace_dir, force, argc, argv);
 	
 	auto wsDirSz = workspace_dir.generic_string().size();
 

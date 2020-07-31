@@ -204,16 +204,22 @@ fs::path bzlws_tool_lib::get_src_out_path
 
 std::vector<src_info> bzlws_tool_lib::get_srcs_info
 	( const fs::path&  workspace_dir
+	, bool&            out_force
 	, int              argc
 	, char**           argv
 	)
 {
 	std::vector<src_info> srcs_info;
 
-	for(int i=1; argc-1 > i; i += 2) {
-		auto target_str = std::string(argv[i]);
-		auto arg = std::string(argv[i + 1]);
-		auto src_path = workspace_dir / arg;
+	for(int i=1; argc-1 > i; i++) {
+		auto arg = std::string(argv[i]);
+		if(arg == "--force") {
+			out_force = true;
+			continue;
+		}
+
+		auto target_str = arg;
+		auto src_path = workspace_dir / std::string(argv[i + 1]);
 
 		if(!fs::exists(src_path)) {
 			std::cerr << "Source path does not exist: " << src_path << std::endl;
@@ -229,6 +235,8 @@ std::vector<src_info> bzlws_tool_lib::get_srcs_info
 		);
 
 		srcs_info.push_back({src_path, src_out_path});
+
+		i += 1;
 	}
 
 	return srcs_info;

@@ -23,6 +23,7 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
 
 
 int main(int argc, char* argv[]) {
+	bool force = false;
 	std::string output;
 	std::string tool;
 	std::vector<std::array<std::string, 2>> paths;
@@ -36,6 +37,9 @@ int main(int argc, char* argv[]) {
 		} else
 		if(arg == "--tool") {
 			tool = std::string(argv[++i]);
+		} else
+		if(arg == "--force") {
+			force = true;
 		} else {
 			if(i + 1 > argc) {
 				std::cerr << "Uneven pairs of inputs" << std::endl;
@@ -64,6 +68,10 @@ int main(int argc, char* argv[]) {
 	std::ofstream out(output);
 
 	out << SCRIPT_SRC_START << "$(rlocation " << tool << ") \\\n";
+
+	if(force) {
+		out << "  --force \\\n";
+	}
 
 	for(const auto& [target_str, path] : paths) {
 		out << "  " << target_str << " " << path << " \\\n";
