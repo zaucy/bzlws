@@ -160,6 +160,7 @@ fs::path bzlws_tool_lib::get_src_out_path
 	, char**           argv
 	, std::string      owner_label_str
 	, fs::path         src_path
+	, bool             force
 	)
 {
 	auto label = parse_label_string(owner_label_str);
@@ -190,8 +191,13 @@ fs::path bzlws_tool_lib::get_src_out_path
 	fs::path out_dir = fs::path(out_path).remove_filename();
 
 	if(!fs::exists(out_dir)) {
-		std::cerr << "Out path directory does not exist: " << out_dir << std::endl;
-		std::exit(1);
+		if(!force) {
+			std::cerr
+				<< "Out path directory does not exist: " << out_dir << std::endl;
+			std::exit(1);
+		}
+
+		fs::create_directories(out_dir);
 	}
 
 	if(!fs::is_directory(out_dir)) {
@@ -231,7 +237,8 @@ std::vector<src_info> bzlws_tool_lib::get_srcs_info
 			argc,
 			argv,
 			target_str,
-			src_path
+			src_path,
+			out_force
 		);
 
 		srcs_info.push_back({src_path, src_out_path});

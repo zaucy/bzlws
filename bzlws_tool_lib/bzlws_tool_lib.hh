@@ -54,6 +54,7 @@ namespace bzlws_tool_lib {
 		, char**           argv
 		, std::string      owner_label_str
 		, fs::path         src_path
+		, bool             force
 		);
 
 	std::vector<src_info> get_srcs_info
