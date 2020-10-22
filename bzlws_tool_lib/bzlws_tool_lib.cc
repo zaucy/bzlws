@@ -1,5 +1,8 @@
 #include "bzlws_tool_lib.hh"
 
+#include <fstream>
+#include <yaml-cpp/yaml.h>
+
 namespace fs = bzlws_tool_lib::fs;
 using bzlws_tool_lib::bazelignore_parse_results;
 using bzlws_tool_lib::src_info;
@@ -211,6 +214,7 @@ fs::path bzlws_tool_lib::get_src_out_path
 std::vector<src_info> bzlws_tool_lib::get_srcs_info
 	( const fs::path&  workspace_dir
 	, bool&            out_force
+	, std::string&     out_metafile_path
 	, int              argc
 	, char**           argv
 	)
@@ -221,6 +225,11 @@ std::vector<src_info> bzlws_tool_lib::get_srcs_info
 		auto arg = std::string(argv[i]);
 		if(arg == "--force") {
 			out_force = true;
+			continue;
+		}
+
+		if(arg == "--metafile_out") {
+			out_metafile_path = argv[++i];
 			continue;
 		}
 
@@ -247,4 +256,64 @@ std::vector<src_info> bzlws_tool_lib::get_srcs_info
 	}
 
 	return srcs_info;
+}
+
+void bzlws_tool_lib::remove_previous_generated_files
+	( const fs::path&    workspace_dir
+	, const std::string  metafile_path
+	)
+{
+	auto full_metafile_path = workspace_dir / metafile_path;
+	if(!fs::exists(full_metafile_path)) {
+		return;
+	}
+
+	auto metafile = YAML::LoadFile(full_metafile_path.string());
+
+	for(const auto& field : metafile) {
+		const auto key = field.first.as<std::string>();
+
+		if(key == "files") {
+			const auto file_paths = field.second.as<std::vector<std::string>>();
+
+			auto remove_count = 0;
+			for(auto file_path : file_paths) {
+				std::error_code ec;
+				force_remove(file_path, ec);
+				if(ec) {
+					std::cerr
+						<< "[WARN] Failed to remove '" << file_path << "'" 
+						<< std::endl;
+				} else {
+					remove_count += 1;
+				}
+			}
+
+			if(remove_count > 0) {
+				std::cout
+					<< "Successfully removed " << remove_count << "/" << file_paths.size()
+					<< " existing files" << std::endl;
+			}
+		}
+	}
+}
+
+void bzlws_tool_lib::write_generated_metadata_file
+	( const fs::path&               workspace_dir
+	, const std::string             metafile_path
+	, const std::vector<src_info>&  srcs_info
+	)
+{
+	auto full_metafile_path = workspace_dir / metafile_path;
+	YAML::Node metafile;
+
+	for(auto src : srcs_info) {
+		metafile["files"].push_back(src.new_src_path.generic_string());
+	}
+
+	std::ofstream output(full_metafile_path);
+
+	output << metafile;
+
+	output.close();
 }

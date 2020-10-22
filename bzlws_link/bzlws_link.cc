@@ -4,15 +4,29 @@ int main(int argc, char* argv[]) {
 	using namespace bzlws_tool_lib;
 
 	bool force = false;
+	std::string metafile_path;
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto srcs_info = get_srcs_info(workspace_dir, force, argc, argv);
+	auto srcs_info = get_srcs_info(
+		workspace_dir,
+		force,
+		metafile_path,
+		argc,
+		argv
+	);
 	
 	for(const auto& info : srcs_info) {
 		bzlignore.assert_ignored_path(info.new_src_path);
 	}
 
 	auto wsDirSz = workspace_dir.generic_string().size();
+
+	if(!metafile_path.empty()) {
+		bzlws_tool_lib::remove_previous_generated_files(
+			workspace_dir,
+			metafile_path
+		);
+	}
 
 	for(const auto& info : srcs_info) {
 		const auto& src_path = info.src_path;
@@ -61,6 +75,17 @@ int main(int argc, char* argv[]) {
 				<< std::endl;
 			std::exit(1);
 		}
+	}
+
+	if(!metafile_path.empty()) {
+		std::cout << "Meta file path: " << metafile_path << std::endl;
+		bzlws_tool_lib::write_generated_metadata_file(
+			workspace_dir,
+			metafile_path,
+			srcs_info
+		);
+	} else {
+		std::cout << "No meta file" << std::endl;
 	}
 
 	return 0;

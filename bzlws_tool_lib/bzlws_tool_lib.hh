@@ -60,8 +60,19 @@ namespace bzlws_tool_lib {
 	std::vector<src_info> get_srcs_info
 		( const fs::path&  workspace_dir
 		, bool&            out_force
+		, std::string&     out_metafile_path
 		, int              argc
 		, char**           argv
 		);
 
+	void remove_previous_generated_files
+		( const fs::path&               workspace_dir
+		, const std::string             metafile_path
+		);
+
+	void write_generated_metadata_file
+		( const fs::path&               workspace_dir
+		, const std::string             metafile_path
+		, const std::vector<src_info>&  srcs_info
+		);
 }

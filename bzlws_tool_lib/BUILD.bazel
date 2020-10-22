@@ -14,4 +14,7 @@ cc_library(
     hdrs = ["bzlws_tool_lib.hh"],
     srcs = ["bzlws_tool_lib.cc"],
     copts = _copts,
+    deps = [
+        "@com_github_jbeder_yaml_cpp//:yaml-cpp",
+    ],
 )
