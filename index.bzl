@@ -61,14 +61,23 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         srcs: List of files that should be copied
         out: Output path within the workspace. Certain strings get replaced with
              various information about
-             {BAZEL_LABEL_NAME} - Label name
-             {BAZEL_LABEL_PACKAGE} - Label package
-             {BAZEL_LABEL_WORKSPACE_NAME}  - Workspace name of the label
-             {BAZEL_FULL_LABEL} - Fulll label string
-             {BAZEL_LABEL} - Full label without the workspace name
-             {EXT} - File extension (with the dot)
-             {EXTNAME} - File extension name (without the dot)
-             {BASENAME} - Path basename
+
+             `{BAZEL_LABEL_NAME}` - Label name
+
+             `{BAZEL_LABEL_PACKAGE}` - Label package
+
+             `{BAZEL_LABEL_WORKSPACE_NAME}`  - Workspace name of the label
+
+             `{BAZEL_FULL_LABEL}` - Fulll label string
+
+             `{BAZEL_LABEL}` - Full label without the workspace name
+
+             `{EXT}` - File extension (with the dot)
+
+             `{EXTNAME}` - File extension name (without the dot)
+
+             `{BASENAME}` - Path basename
+
         force: Overwrite existing paths even if they are not files
         metafile_path: Path to metafile
         visibility: visibility of the executable target
@@ -103,14 +112,23 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
         srcs: List of files that should be symlinked
         out: Output path within the workspace. Certain strings get replaced with
              various information about each source target from `srcs`
-             {BAZEL_LABEL_NAME} - Label name
-             {BAZEL_LABEL_PACKAGE} - Label package
-             {BAZEL_LABEL_WORKSPACE_NAME}  - Workspace name of the label
-             {BAZEL_FULL_LABEL} - Fulll label string
-             {BAZEL_LABEL} - Full label without the workspace name
-             {EXT} - File extension (with the dot)
-             {EXTNAME} - File extension name (without the dot)
-             {BASENAME} - Path basename
+
+             `{BAZEL_LABEL_NAME}` - Label name
+
+             `{BAZEL_LABEL_PACKAGE}` - Label package
+
+             `{BAZEL_LABEL_WORKSPACE_NAME}`  - Workspace name of the label
+
+             `{BAZEL_FULL_LABEL}` - Fulll label string
+
+             `{BAZEL_LABEL}` - Full label without the workspace name
+
+             `{EXT}` - File extension (with the dot)
+
+             `{EXTNAME}` - File extension name (without the dot)
+
+             `{BASENAME}` - Path basename
+
         force: Overwrite existing paths even if they are not symlinks
         metafile_path: Path to metafile
         visibility: visibility of the executable target

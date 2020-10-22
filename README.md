@@ -16,8 +16,9 @@ http_archive(
 
 load("@bzlws//:index.bzl", "bzlws_deps")
 bzlws_deps()
-
 ```
+
+See [Documentation](docs/index.md) for usage
 
 ## License
 

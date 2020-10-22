@@ -1,3 +1,21 @@
+load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+load("@bzlws//:index.bzl", "bzlws_copy")
+
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["index.bzl"])
+
+stardoc(
+    name = "docs",
+    input = "index.bzl",
+    out = "index.md",
+)
+
+bzlws_copy(
+    name = "docs_copy",
+    out = "docs/{FILENAME}",
+    force = True,
+    srcs = [
+        ":docs",
+    ],
+)
