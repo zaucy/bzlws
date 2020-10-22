@@ -13,8 +13,8 @@ http_archive(
 git_repository(
     name = "io_bazel_stardoc",
     remote = "https://github.com/bazelbuild/stardoc.git",
-    commit = "4378e9b6bb2831de7143580594782f538f461180",
-    shallow_since = "1570829166 -0400",
+    commit = "247c2097e7346778ac8d03de5a4770d6b9890dc5",
+    shallow_since = "1600270745 -0400",
 )
 
 load("@io_bazel_stardoc//:setup.bzl", "stardoc_repositories")
