@@ -3,32 +3,25 @@
 int main(int argc, char* argv[]) {
 	using namespace bzlws_tool_lib;
 
-	bool force = false;
-	std::string metafile_path;
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto srcs_info = get_srcs_info(
-		workspace_dir,
-		force,
-		metafile_path,
-		argc,
-		argv
-	);
+	auto options = parse_argv(workspace_dir, argc, argv);
+
 	
 	auto wsDirSz = workspace_dir.generic_string().size();
 
-	for(const auto& info : srcs_info) {
+	for(const auto& info : options.srcs_info) {
 		bzlignore.assert_ignored_path(info.new_src_path);
 	}
 
-	if(!metafile_path.empty()) {
+	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::remove_previous_generated_files(
 			workspace_dir,
-			metafile_path
+			options.metafile_path
 		);
 	}
 
-	for(const auto& info : srcs_info) {
+	for(const auto& info : options.srcs_info) {
 		const auto& src_path = info.src_path;
 		const auto& new_src_path = info.new_src_path;
 
@@ -49,25 +42,26 @@ int main(int argc, char* argv[]) {
 			<< fs::relative(new_src_path.string(), workspace_dir).generic_string()
 			<< std::endl;
 
-		fs::copy_file(src_path, new_src_path, ec);
-		if(ec) {
-			std::cerr
-				<< "[ERROR] Failed to copy " << src_path.generic_string() << " -> "
-				<< new_src_path.generic_string() << std::endl << ec.message()
-				<< std::endl;
-			std::exit(1);
+		if(options.substitution_keys.empty()) {
+			fs::copy_file(src_path, new_src_path, ec);
+			if(ec) {
+				std::cerr
+					<< "[ERROR] Failed to copy " << src_path.generic_string() << " -> "
+					<< new_src_path.generic_string() << std::endl << ec.message()
+					<< std::endl;
+				std::exit(1);
+			}
+		} else {
+			bzlws_tool_lib::copy_with_substitutions(options, info);
 		}
 	}
 
-	if(!metafile_path.empty()) {
-		std::cout << "Meta file path: " << metafile_path << std::endl;
+	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::write_generated_metadata_file(
 			workspace_dir,
-			metafile_path,
-			srcs_info
+			options.metafile_path,
+			options.srcs_info
 		);
-	} else {
-		std::cout << "No meta file" << std::endl;
 	}
 
 	return 0;

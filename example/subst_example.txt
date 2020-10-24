@@ -1,0 +1,3 @@
+the bazel execution root is "__EXEC_ROOT__"
+
+and the bazel release is "__BAZEL_RELEASE__"

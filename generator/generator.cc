@@ -26,6 +26,7 @@ int main(int argc, char* argv[]) {
 	bool force = false;
 	std::string output;
 	std::string tool;
+	std::vector<std::string> forwarded_args;
 	std::vector<std::array<std::string, 2>> paths;
 	std::string out_path = std::string(argv[argc-1]);
 
@@ -39,7 +40,12 @@ int main(int argc, char* argv[]) {
 			tool = std::string(argv[++i]);
 		} else
 		if(arg == "--force") {
-			force = true;
+			forwarded_args.push_back(arg);
+		} else
+		if(arg == "--subst") {
+			forwarded_args.push_back(arg);
+			forwarded_args.push_back(argv[++i]);
+			forwarded_args.push_back(argv[++i]);
 		} else {
 			if(i + 1 > argc) {
 				std::cerr << "Uneven pairs of inputs" << std::endl;
@@ -51,17 +57,17 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(output.empty()) {
-		std::cerr << "missing --output" << std::endl;
+		std::cerr << "[ERROR] missing --output" << std::endl;
 		return 1;
 	}
 
 	if(tool.empty()) {
-		std::cerr << "missing --tool" << std::endl;
+		std::cerr << "[ERROR] missing --tool" << std::endl;
 		return 1;
 	}
 
 	if(paths.empty()) {
-		std::cerr << "No sources provided" << std::endl;
+		std::cerr << "[ERROR] No sources provided" << std::endl;
 		return 1;
 	}
 
@@ -69,8 +75,8 @@ int main(int argc, char* argv[]) {
 
 	out << SCRIPT_SRC_START << "$(rlocation " << tool << ") \\\n";
 
-	if(force) {
-		out << "  --force \\\n";
+	for(const auto& forwarded_arg : forwarded_args) {
+		out << "  " << forwarded_arg << " \\\n";
 	}
 
 	for(const auto& [target_str, path] : paths) {

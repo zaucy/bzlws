@@ -1,7 +1,16 @@
 #include "bzlws_tool_lib.hh"
 
 #include <fstream>
+#include <array>
+#include <cstdio>
+#include <memory>
+#include <sstream>
 #include <yaml-cpp/yaml.h>
+
+#if _WIN32
+	#define popen _popen
+	#define pclose _pclose 
+#endif // _WIN32
 
 namespace fs = bzlws_tool_lib::fs;
 using bzlws_tool_lib::bazelignore_parse_results;
@@ -14,7 +23,7 @@ namespace {
 		std::string workspace_name;
 	};
 
-	static bazel_label_info parse_label_string
+	bazel_label_info parse_label_string
 		( const std::string& label_str
 		)
 	{
@@ -33,6 +42,14 @@ namespace {
 		info.name = label_str.substr(package_name_end + 1);
 
 		return info;
+	}
+
+	[[noreturn]]
+	void tool_exit
+		( bzlws_tool_lib::exit_code code
+		)
+	{
+		std::exit(static_cast<int>(code));
 	}
 }
 
@@ -69,7 +86,7 @@ fs::path bzlws_tool_lib::get_build_workspace_dir() {
 	std::cerr
 		<< "[ERROR] Missing 'BUILD_WORKSPACE_DIRECTORY' environment variable"
 		<< std::endl;
-	std::exit(1);
+	tool_exit(exit_code::missing_environment_variable);
 }
 
 bool bazelignore_parse_results::is_ignored_path
@@ -99,7 +116,7 @@ void bazelignore_parse_results::assert_ignored_path
 			<< "[ERROR] \"" << path.generic_string()
 			<< "\" is not within a bazel ignored directory. "
 			<< "Please check your .bazelignore file" << std::endl;
-		std::exit(1);
+		tool_exit(exit_code::bazelignore_error);
 	}
 }
 
@@ -117,13 +134,13 @@ bazelignore_parse_results bzlws_tool_lib::parse_bazelignore
 				<< "Error while checking if " << bazelignore_path << " exists: "
 				<< ec.message()
 				<< std::endl;
-			exit(1);
+			tool_exit(exit_code::filesystem_error);
 		}
 
 		if(!bazelignore_exists) {
 			std::cerr
 				<< "[ERROR] " << bazelignore_path <<  " does not exist" << std::endl;
-			exit(1);
+			tool_exit(exit_code::filesystem_error);
 		}
 	}
 
@@ -197,7 +214,7 @@ fs::path bzlws_tool_lib::get_src_out_path
 		if(!force) {
 			std::cerr
 				<< "Out path directory does not exist: " << out_dir << std::endl;
-			std::exit(1);
+			tool_exit(exit_code::filesystem_no_force_error);
 		}
 
 		fs::create_directories(out_dir);
@@ -205,40 +222,54 @@ fs::path bzlws_tool_lib::get_src_out_path
 
 	if(!fs::is_directory(out_dir)) {
 		std::cerr << "Out path is not a directory " << out_dir << std::endl;
-		std::exit(1);
+		tool_exit(exit_code::existing_output_error);
 	}
 
 	return out_path;
 }
 
-std::vector<src_info> bzlws_tool_lib::get_srcs_info
+bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 	( const fs::path&  workspace_dir
-	, bool&            out_force
-	, std::string&     out_metafile_path
 	, int              argc
 	, char**           argv
 	)
 {
-	std::vector<src_info> srcs_info;
+	bzlws_tool_lib::options options;
 
 	for(int i=1; argc-1 > i; i++) {
+		auto next_arg = [&] {
+			if(i+1 > argc-1) {
+				std::cerr
+					<< "Argv access out of range at index " << i
+					<< " (improperly formated) " << std::endl;
+				tool_exit(exit_code::invalid_arguments);
+			}
+
+			return std::string(argv[++i]);
+		};
+
 		auto arg = std::string(argv[i]);
 		if(arg == "--force") {
-			out_force = true;
+			options.force = true;
 			continue;
 		}
 
 		if(arg == "--metafile_out") {
-			out_metafile_path = argv[++i];
+			options.metafile_path = next_arg();
+			continue;
+		}
+
+		if(arg == "--subst") {
+			options.substitution_keys[next_arg()].push_back(next_arg());
 			continue;
 		}
 
 		auto target_str = arg;
-		auto src_path = workspace_dir / std::string(argv[i + 1]);
+		auto src_path = workspace_dir / next_arg();
 
 		if(!fs::exists(src_path)) {
 			std::cerr << "Source path does not exist: " << src_path << std::endl;
-			std::exit(1);
+			tool_exit(exit_code::source_path_does_not_exist);
 		}
 
 		auto src_out_path = get_src_out_path(
@@ -247,15 +278,59 @@ std::vector<src_info> bzlws_tool_lib::get_srcs_info
 			argv,
 			target_str,
 			src_path,
-			out_force
+			options.force
 		);
 
-		srcs_info.push_back({src_path, src_out_path});
-
-		i += 1;
+		options.srcs_info.push_back({src_path, src_out_path});
 	}
 
-	return srcs_info;
+	if(!options.substitution_keys.empty()) {
+		std::vector<std::string> subst_keys;
+		for(const auto& entry : options.substitution_keys) {
+			subst_keys.push_back(entry.first);
+		}
+
+		auto curr_path = fs::current_path();
+		fs::current_path(workspace_dir);
+		auto subst_values = get_bazel_info(subst_keys);
+		fs::current_path(curr_path);
+
+		for(size_t i=0; subst_keys.size() > i; ++i) {
+			const auto& key = subst_keys[i];
+			const auto& value = subst_values[i];
+			options.substitution_values[key] = value;
+		}
+	}
+
+	return options;
+}
+
+void bzlws_tool_lib::copy_with_substitutions
+	( const options& options
+	, const src_info& src_info
+	)
+{
+	std::ifstream in_stream(src_info.src_path);
+	std::ofstream out_stream(src_info.new_src_path);
+	std::string line;
+
+	while(!in_stream.eof()) {
+		std::getline(in_stream, line, '\n');
+		for(const auto& entry : options.substitution_keys) {
+			const auto& value = options.substitution_values.at(entry.first);
+			if(value.empty()) continue;
+
+			for(const auto& key : entry.second) {
+				auto key_idx = line.find(key);
+				while(key_idx != std::string::npos) {
+					line.replace(key_idx, key.size(), value);
+					key_idx = line.find(key);
+				}
+			}
+		}
+
+		out_stream << line << '\n';
+	}
 }
 
 void bzlws_tool_lib::remove_previous_generated_files
@@ -316,4 +391,55 @@ void bzlws_tool_lib::write_generated_metadata_file
 	output << metafile;
 
 	output.close();
+}
+
+std::vector<std::string> bzlws_tool_lib::get_bazel_info
+	( const std::vector<std::string>& info_keys
+	)
+{	
+	if(info_keys.empty()) {
+		return {};
+	}
+
+	std::string cmd = "bazel info";
+	std::vector<std::string> key_values;
+	std::stringstream result;
+
+	for(const auto& key : info_keys) {
+		cmd += " " + key;
+	}
+
+	{
+		std::array<char, 512> stdout_buf;
+		std::unique_ptr<FILE, decltype(&pclose)> pipe(
+			popen(cmd.c_str(), "r"),
+			pclose
+		);
+
+		if(!pipe) {
+			throw std::runtime_error("get_bazel_info popen() failed!");
+		}
+
+		while (fgets(stdout_buf.data(), stdout_buf.size(), pipe.get()) != nullptr) {
+			result << stdout_buf.data();
+		}
+	}
+
+	result.seekp(0);
+
+	std::array<char, 128> key_value_buf;
+	while(!result.eof()) {
+		result.ignore(512, ':');
+		result.getline(key_value_buf.data(), key_value_buf.size(), '\n');
+		auto value_length = strlen(key_value_buf.data());
+
+		auto& key_value = key_values.emplace_back(
+			key_value_buf.data(),
+			value_length
+		);
+
+		trim_ws(key_value);
+	}
+
+	return key_values;
 }
