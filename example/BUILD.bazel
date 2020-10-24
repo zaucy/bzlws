@@ -25,13 +25,53 @@ bzlws_copy(
 )
 
 bzlws_copy(
-    name = "substitutions_example1",
+    name = "path_substitutions_example1",
     srcs = ["example.txt"],
     out = "ignored_folder/__{BASENAME}__{EXT}",
 )
 
 bzlws_copy(
-    name = "substitutions_example2",
+    name = "path_substitutions_example2",
     srcs = ["example.txt"],
     out = "ignored_folder/{EXTNAME}__{FILENAME}",
+)
+
+bzlws_copy(
+    name = "substitutions_example1",
+    srcs = ["subst_example.txt"],
+    out = "ignored_folder/{FILENAME}",
+    substitutions = {
+        "@bzlws//info:execution_root": "__EXEC_ROOT__",
+    },
+)
+
+bzlws_copy(
+    name = "info_all_example",
+    srcs = ["info.txt"],
+    out = "ignored_folder/{FILENAME}",
+    substitutions = {
+        "@bzlws//info:bazel-bin": "__bazel-bin",
+        "@bzlws//info:bazel-genfiles": "__bazel-genfiles",
+        "@bzlws//info:bazel-testlogs": "__bazel-testlogs",
+        "@bzlws//info:character-encoding": "__character-encoding",
+        "@bzlws//info:command_log": "__command_log",
+        "@bzlws//info:committed-heap-size": "__committed-heap-size",
+        "@bzlws//info:execution_root": "__execution_root",
+        "@bzlws//info:gc-count": "__gc-count",
+        "@bzlws//info:gc-time": "__gc-time",
+        "@bzlws//info:install_base": "__install_base",
+        "@bzlws//info:java-home": "__java-home",
+        "@bzlws//info:java-runtime": "__java-runtime",
+        "@bzlws//info:java-vm": "__java-vm",
+        "@bzlws//info:max-heap-size": "__max-heap-size",
+        "@bzlws//info:output_base": "__output_base",
+        "@bzlws//info:output_path": "__output_path",
+        "@bzlws//info:package_path": "__package_path",
+        "@bzlws//info:release": "__release",
+        "@bzlws//info:repository_cache": "__repository_cache",
+        "@bzlws//info:server_log": "__server_log",
+        "@bzlws//info:server_pid": "__server_pid",
+        "@bzlws//info:used-heap-size": "__used-heap-size",
+        "@bzlws//info:workspace": "__workspace",
+    },
 )

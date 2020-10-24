@@ -1,4 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("//internal:bzlws_info.bzl", "BzlwsInfo")
 
 _sh_binary_suffix = "__bzlws_sh_binary_src"
 
@@ -24,6 +25,10 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     if ctx.attr.metafile_path:
         args.add("--metafile_out", ctx.attr.metafile_path)
 
+    for key in ctx.attr.substitutions:
+        value = ctx.attr.substitutions[key]
+        args.add_all(["--subst", key[BzlwsInfo].name, value])
+
     args.add("--output", src)
     args.add_all(ctx.files.srcs, map_each = _file_owner_label_pair)
     args.add(ctx.attr.out)
@@ -45,6 +50,11 @@ _bzlws_tool_shell_script_src = rule(
         "tool": attr.string(mandatory = True),
         "force": attr.bool(default = False),
         "metafile_path": attr.string(default = "", mandatory = False),
+        "substitutions": attr.label_keyed_string_dict(
+            default = {},
+            providers = [BzlwsInfo],
+            mandatory = False,
+        ),
         "_generator": attr.label(
             default = "@bzlws//generator",
             executable = True,
@@ -53,7 +63,7 @@ _bzlws_tool_shell_script_src = rule(
     },
 )
 
-def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path = "", visibility = None):
+def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path = "", substitutions = {}, visibility = None):
     """Copy generated files into workspace directory
 
     Args:
@@ -80,6 +90,10 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
 
         force: Overwrite existing paths even if they are not files
         metafile_path: Path to metafile
+        substitutions: BzlwsInfo label keyed, string valued, dictionary. The 
+                       values will be replaced in the source files with the
+                       values from the `bazel info` command. The available
+                       BzlwsInfo targets are in the `@bzlws//info` package.
         visibility: visibility of the executable target
     """
     if out.startswith("/"):
@@ -92,6 +106,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         out = out,
         force = force,
         metafile_path = metafile_path,
+        substitutions = substitutions,
         tool = "bzlws/bzlws_copy/bzlws_copy.exe",
         visibility = ["//visibility:private"],
     )
