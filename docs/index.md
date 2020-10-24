@@ -24,18 +24,6 @@ Copy generated files into workspace directory
 | <a id="bzlws_copy-visibility"></a>visibility |  visibility of the executable target   |  <code>None</code> |
 
 
-<a id="#bzlws_deps"></a>
-
-## bzlws_deps
-
-<pre>
-bzlws_deps()
-</pre>
-
-
-
-
-
 <a id="#bzlws_link"></a>
 
 ## bzlws_link
