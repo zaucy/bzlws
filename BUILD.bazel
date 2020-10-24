@@ -3,7 +3,7 @@ load("@bzlws//:index.bzl", "bzlws_copy")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["index.bzl"])
+exports_files(["index.bzl", "repo.bzl"])
 
 stardoc(
     name = "docs",

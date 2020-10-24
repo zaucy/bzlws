@@ -1,3 +1,5 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary")
+
 _msvc_copts = ["/std:c++17"]
 _gcc_copts = ["-std=c++17"]
 
@@ -9,8 +11,8 @@ _copts = select({
 })
 
 cc_binary(
-    name = "generator",
+    name = "cpp",
     visibility = ["//visibility:public"],
-    srcs = ["generator.cc"],
+    srcs = ["cpp_generator.cc"],
     copts = _copts,
 )

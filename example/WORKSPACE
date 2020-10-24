@@ -3,5 +3,5 @@ local_repository(
     path = "..",
 )
 
-load("@bzlws//:index.bzl", "bzlws_deps")
+load("@bzlws//:repo.bzl", "bzlws_deps")
 bzlws_deps()

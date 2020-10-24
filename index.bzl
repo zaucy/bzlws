@@ -1,7 +1,17 @@
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("//internal:bzlws_info.bzl", "BzlwsInfo")
 
-_sh_binary_suffix = "__bzlws_sh_binary_src"
+_sh_binary_suffix = "__bzlws_generator_output"
+
+_msvc_copts = ["/std:c++17"]
+_gcc_copts = ["-std=c++17"]
+
+_copts = select({
+    "@bazel_tools//src/conditions:windows": _msvc_copts,
+    "@bazel_tools//src/conditions:windows_msvc": _msvc_copts,
+    "@bazel_tools//src/conditions:windows_msys": _msvc_copts,
+    "//conditions:default": _gcc_copts,
+})
 
 def _get_full_label_string(label):
     if not label:
@@ -14,7 +24,7 @@ def _file_owner_label_pair(file):
 
 def _bzlws_tool_shell_script_src_impl(ctx):
     name = ctx.attr.name
-    src_filename = name[:-len(_sh_binary_suffix)] + ".sh"
+    src_filename = name[:-len(_sh_binary_suffix)] + ".cc"
     src = ctx.actions.declare_file(src_filename)
     args = ctx.actions.args()
 
@@ -36,7 +46,7 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     ctx.actions.run(
         outputs = [src],
         inputs = ctx.files.srcs,
-        executable = ctx.executable._generator,
+        executable = ctx.executable.generator,
         arguments = [args],
     )
 
@@ -55,8 +65,8 @@ _bzlws_tool_shell_script_src = rule(
             providers = [BzlwsInfo],
             mandatory = False,
         ),
-        "_generator": attr.label(
-            default = "@bzlws//generator",
+        "generator": attr.label(
+            default = "@bzlws//generators/cpp",
             executable = True,
             cfg = "host",
         )
@@ -111,13 +121,22 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         visibility = ["//visibility:private"],
     )
 
-    native.sh_binary(
+    cc_binary(
         name = name,
         srcs = [":" + sh_script_name],
-        deps = ["@bazel_tools//tools/bash/runfiles"],
+        copts = _copts,
+        deps = ["@bazel_tools//tools/cpp/runfiles"],
         data = ["@bzlws//bzlws_copy:bzlws_copy"] + srcs,
         visibility = visibility,
     )
+
+    # native.sh_binary(
+    #     name = name,
+    #     srcs = [":" + sh_script_name],
+    #     deps = ["@bazel_tools//tools/bash/runfiles"],
+    #     data = ["@bzlws//bzlws_copy:bzlws_copy"] + srcs,
+    #     visibility = visibility,
+    # )
 
 def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path = "", visibility = None):
     """Symlink generated files into workspace directory
@@ -162,19 +181,20 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
         visibility = ["//visibility:private"],
     )
 
-    native.sh_binary(
+    cc_binary(
         name = name,
         srcs = [":" + sh_script_name],
-        deps = ["@bazel_tools//tools/bash/runfiles"],
-        data = ["@bzlws//bzlws_link:bzlws_link"] + srcs,
+        copts = _copts,
+        deps = ["@bazel_tools//tools/cpp/runfiles"],
+        data = ["@bzlws//bzlws_copy:bzlws_link"] + srcs,
         visibility = visibility,
     )
 
-def bzlws_deps():
-    if not native.existing_rule("com_github_jbeder_yaml_cpp"):
-        http_archive(
-            name = "com_github_jbeder_yaml_cpp",
-            url = "https://github.com/jbeder/yaml-cpp/archive/27d8a0e302c26153b1611c65f4c233ef5db0ba32.zip",
-            strip_prefix = "yaml-cpp-27d8a0e302c26153b1611c65f4c233ef5db0ba32",
-            sha256 = "4843ba598d1d29e3daefae008d26f95c3de3117dc707757190f6c28e076573a6",
-        )
+    # native.sh_binary(
+    #     name = name,
+    #     srcs = [":" + sh_script_name],
+    #     deps = ["@bazel_tools//tools/bash/runfiles"],
+    #     data = ["@bzlws//bzlws_link:bzlws_link"] + srcs,
+    #     visibility = visibility,
+    # )
+
