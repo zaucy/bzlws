@@ -42,6 +42,7 @@ bzlws_copy(
     out = "ignored_folder/{FILENAME}",
     substitutions = {
         "@bzlws//info:execution_root": "__EXEC_ROOT__",
+        "@bzlws//info:release": "__BAZEL_RELEASE__",
     },
 )
 
