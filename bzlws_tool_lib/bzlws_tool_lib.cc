@@ -429,7 +429,10 @@ std::vector<std::string> bzlws_tool_lib::get_bazel_info
 
 	std::array<char, 128> key_value_buf;
 	while(!result.eof()) {
-		result.ignore(512, ':');
+		if(info_keys.size() > 1) {
+			result.ignore(512, ':');
+		}
+
 		result.getline(key_value_buf.data(), key_value_buf.size(), '\n');
 		auto value_length = strlen(key_value_buf.data());
 
