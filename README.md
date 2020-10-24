@@ -9,12 +9,12 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "bzlws",
-    strip_prefix = "bzlws-bfd19cc5d1d85fc7c45ea1c186824bd38abdcab4",
-    url = "https://github.com/zaucy/bzlws/archive/bfd19cc5d1d85fc7c45ea1c186824bd38abdcab4.zip",
-    sha256 = "e77b287efd27508e27bc3c11ccbddb57a270dcdb59e2b5e105a52a71c24c510f",
+    strip_prefix = "bzlws-f2a5eaf83de60e37386c4c9d6f56736afbfbc8c5",
+    url = "https://github.com/zaucy/bzlws/archive/f2a5eaf83de60e37386c4c9d6f56736afbfbc8c5.zip",
+    sha256 = "d540922e25483d9261541f14fff986853251a949cb50d4d6f8b6a5f28a355d35",
 )
 
-load("@bzlws//:index.bzl", "bzlws_deps")
+load("@bzlws//:repo.bzl", "bzlws_deps")
 bzlws_deps()
 ```
 
