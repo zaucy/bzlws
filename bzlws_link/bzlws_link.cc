@@ -3,32 +3,24 @@
 int main(int argc, char* argv[]) {
 	using namespace bzlws_tool_lib;
 
-	bool force = false;
-	std::string metafile_path;
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto srcs_info = get_srcs_info(
-		workspace_dir,
-		force,
-		metafile_path,
-		argc,
-		argv
-	);
+	auto options = parse_argv(workspace_dir, argc, argv);
 	
-	for(const auto& info : srcs_info) {
+	for(const auto& info : options.srcs_info) {
 		bzlignore.assert_ignored_path(info.new_src_path);
 	}
 
 	auto wsDirSz = workspace_dir.generic_string().size();
 
-	if(!metafile_path.empty()) {
+	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::remove_previous_generated_files(
 			workspace_dir,
-			metafile_path
+			options.metafile_path
 		);
 	}
 
-	for(const auto& info : srcs_info) {
+	for(const auto& info : options.srcs_info) {
 		const auto& src_path = info.src_path;
 		const auto& new_src_path = info.new_src_path;
 		std::error_code ec;
@@ -43,7 +35,7 @@ int main(int argc, char* argv[]) {
 				std::exit(1);
 			}
 
-			if(!existing_is_symlink && !force) {
+			if(!existing_is_symlink && !options.force) {
 				std::cerr
 					<< "[ERROR] Cannot create symlink since \""
 					<< new_src_path.generic_string() << "\" exists and is a non-symlink. "
@@ -77,15 +69,12 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(!metafile_path.empty()) {
-		std::cout << "Meta file path: " << metafile_path << std::endl;
+	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::write_generated_metadata_file(
 			workspace_dir,
-			metafile_path,
-			srcs_info
+			options.metafile_path,
+			options.srcs_info
 		);
-	} else {
-		std::cout << "No meta file" << std::endl;
 	}
 
 	return 0;
