@@ -117,7 +117,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         force = force,
         metafile_path = metafile_path,
         substitutions = substitutions,
-        tool = "bzlws/bzlws_copy/bzlws_copy.exe",
+        tool = "bzlws/bzlws_copy/bzlws_copy",
         visibility = ["//visibility:private"],
     )
 
@@ -169,7 +169,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
         out = out,
         force = force,
         metafile_path = metafile_path,
-        tool = "bzlws/bzlws_link/bzlws_link.exe",
+        tool = "bzlws/bzlws_link/bzlws_link",
         visibility = ["//visibility:private"],
     )
 
