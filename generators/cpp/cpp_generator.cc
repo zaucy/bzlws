@@ -94,6 +94,10 @@ int main(int argc, char* argv[]) {
 
 	out << SCRIPT_SRC_START;
 
+#if _WIN32
+	tool += ".exe";
+#endif
+
 	out << "\tcmd += runfiles->Rlocation(" << escaped_string(tool) << ");\n";
 	out << "\tcmd += \" \";\n";
 

@@ -130,14 +130,6 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         visibility = visibility,
     )
 
-    # native.sh_binary(
-    #     name = name,
-    #     srcs = [":" + sh_script_name],
-    #     deps = ["@bazel_tools//tools/bash/runfiles"],
-    #     data = ["@bzlws//bzlws_copy:bzlws_copy"] + srcs,
-    #     visibility = visibility,
-    # )
-
 def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path = "", visibility = None):
     """Symlink generated files into workspace directory
 
@@ -186,15 +178,6 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
         srcs = [":" + sh_script_name],
         copts = _copts,
         deps = ["@bazel_tools//tools/cpp/runfiles"],
-        data = ["@bzlws//bzlws_copy:bzlws_link"] + srcs,
+        data = ["@bzlws//bzlws_link:bzlws_link"] + srcs,
         visibility = visibility,
     )
-
-    # native.sh_binary(
-    #     name = name,
-    #     srcs = [":" + sh_script_name],
-    #     deps = ["@bazel_tools//tools/bash/runfiles"],
-    #     data = ["@bzlws//bzlws_link:bzlws_link"] + srcs,
-    #     visibility = visibility,
-    # )
-
