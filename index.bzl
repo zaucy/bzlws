@@ -73,7 +73,7 @@ _bzlws_tool_shell_script_src = rule(
     },
 )
 
-def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path = "", substitutions = {}, visibility = None):
+def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path = "", substitutions = {}, visibility = None, **kwargs):
     """Copy generated files into workspace directory
 
     Args:
@@ -105,6 +105,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
                        values from the `bazel info` command. The available
                        BzlwsInfo targets are in the `@bzlws//info` package.
         visibility: visibility of the executable target
+        **kwargs: rest of arguments get passed to underlying targets
     """
     if out.startswith("/"):
         fail("out cannot start with '/'")
@@ -119,6 +120,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         substitutions = substitutions,
         tool = "bzlws/bzlws_copy/bzlws_copy",
         visibility = ["//visibility:private"],
+        **kwargs,
     )
 
     cc_binary(
@@ -128,9 +130,10 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         deps = ["@bazel_tools//tools/cpp/runfiles"],
         data = ["@bzlws//bzlws_copy:bzlws_copy"] + srcs,
         visibility = visibility,
+        **kwargs
     )
 
-def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path = "", visibility = None):
+def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path = "", visibility = None, **kwargs):
     """Symlink generated files into workspace directory
 
     Args:
@@ -158,6 +161,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
         force: Overwrite existing paths even if they are not symlinks
         metafile_path: Path to metafile
         visibility: visibility of the executable target
+        **kwargs: rest of arguments get passed to underlying targets
     """
     if out.startswith("/"):
         fail("out cannot start with '/'")
@@ -171,6 +175,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
         metafile_path = metafile_path,
         tool = "bzlws/bzlws_link/bzlws_link",
         visibility = ["//visibility:private"],
+        **kwargs,
     )
 
     cc_binary(
@@ -180,4 +185,5 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
         deps = ["@bazel_tools//tools/cpp/runfiles"],
         data = ["@bzlws//bzlws_link:bzlws_link"] + srcs,
         visibility = visibility,
+        **kwargs
     )
