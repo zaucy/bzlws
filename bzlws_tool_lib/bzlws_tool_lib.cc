@@ -268,7 +268,9 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 		auto src_path = workspace_dir / next_arg();
 
 		if(!fs::exists(src_path)) {
-			std::cerr << "Source path does not exist: " << src_path << std::endl;
+			std::cerr
+				<< "Source path does not exist: "
+				<< src_path.string() << std::endl;
 			tool_exit(exit_code::source_path_does_not_exist);
 		}
 
