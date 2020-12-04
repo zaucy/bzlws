@@ -19,8 +19,14 @@ def _get_full_label_string(label):
     
     return "@" + label.workspace_name + "//" + label.package + ":" + label.name 
 
+def _get_file_path(ctx, file):
+    if file.path.startswith("external/"):
+        return file.path[len("external/"):]
+
+    return file.path
+
 def _file_owner_label_pair(file):
-    return [_get_full_label_string(file.owner), file.path]
+    return [_get_full_label_string(file.owner), _get_file_path(file)]
 
 def _bzlws_tool_shell_script_src_impl(ctx):
     name = ctx.attr.name
@@ -40,7 +46,12 @@ def _bzlws_tool_shell_script_src_impl(ctx):
         args.add_all(["--subst", key[BzlwsInfo].name, value])
 
     args.add("--output", src)
-    args.add_all(ctx.files.srcs, map_each = _file_owner_label_pair)
+    for src_file in ctx.files.srcs:
+        src_label_str = _get_full_label_string(src_file.owner)
+        src_file_path = _get_file_path(ctx, src_file)
+        args.add(src_label_str)
+        args.add(src_file_path)
+
     args.add(ctx.attr.out)
 
     ctx.actions.run(

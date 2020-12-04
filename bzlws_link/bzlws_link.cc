@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		std::cout
-			<< src_path.generic_string().substr(wsDirSz + 1) << " <-> "
+			<< src_path.generic_string() << " <-> "
 			<< fs::relative(new_src_path.string(), workspace_dir).generic_string()
 			<< std::endl;
 

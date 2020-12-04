@@ -11,6 +11,7 @@ static const char SCRIPT_SRC_START[] = R"______(
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <iostream>
 #include <filesystem>
 
 #include "tools/cpp/runfiles/runfiles.h"
@@ -26,6 +27,10 @@ int main(int argc, char* argv[]) {
 	std::string cmd;
 	std::string error;
 	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], &error));
+	if(!error.empty()) {
+		std::cerr << error << std::endl;
+		std::exit(1);
+	}
 )______";
 
 static const char SCRIPT_SRC_END[] = R"______(
@@ -64,6 +69,10 @@ int main(int argc, char* argv[]) {
 		if(arg == "--subst") {
 			forwarded_args.push_back(arg);
 			forwarded_args.push_back(argv[++i]);
+			forwarded_args.push_back(argv[++i]);
+		} else
+		if(arg == "--metafile_out") {
+			forwarded_args.push_back(arg);
 			forwarded_args.push_back(argv[++i]);
 		} else {
 			if(i + 1 > argc) {
@@ -105,10 +114,31 @@ int main(int argc, char* argv[]) {
 		out << "\tcmd += " << escaped_string(" " + forwarded_arg + " ") << ";\n";
 	}
 
+	auto idx = 0;
 	for(const auto& [target_str, path] : paths) {
+		const std::string path_var_name = "p" + std::to_string(idx) + "_";
+		out << "\tcmd += " << escaped_string("  " + target_str + " ") << ";\n";
+
 		out
-			<< "\tcmd += " << escaped_string("  " + target_str + " " + path + " ")
-			<< ";\n";
+			<< "\n\tauto " << path_var_name << " = "
+			<< "runfiles->Rlocation(" << escaped_string(path) << ");\n"
+			<< "\tif(" << path_var_name << ".empty()) {\n"
+			<< "\t\tstd::cerr << \"[ERROR] Cannot find runfile '\" << "
+			<< escaped_string(path) << " << \"'\" << std::endl;\n"
+			<< "\t\tstd::exit(1);\n"
+			<< "\t}\n";
+
+		out
+			<< "\tif(!std::filesystem::exists(" + path_var_name + ")) {\n"
+			<< "\t\t" << path_var_name << " = " << escaped_string(path) << ";\n"
+			<< "\t}\n";
+
+		out
+			<< "\tcmd += std::filesystem::path("
+			<< path_var_name
+			<< ").make_preferred().string() + \" \";\n";
+
+		idx += 1;
 	}
 
 	out
