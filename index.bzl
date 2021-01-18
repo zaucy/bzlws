@@ -41,6 +41,9 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     if ctx.attr.metafile_path:
         args.add("--metafile_out", ctx.attr.metafile_path)
 
+    if ctx.attr.strip_filepath_prefix:
+        args.add("--strip_filepath_prefix", ctx.attr.strip_filepath_prefix)
+
     for key in ctx.attr.substitutions:
         value = ctx.attr.substitutions[key]
         args.add_all(["--subst", key[BzlwsInfo].name, value])
@@ -70,6 +73,7 @@ _bzlws_tool_shell_script_src = rule(
         "out": attr.string(mandatory = True),
         "tool": attr.string(mandatory = True),
         "force": attr.bool(default = False),
+        "strip_filepath_prefix": attr.string(default = "", mandatory = False),
         "metafile_path": attr.string(default = "", mandatory = False),
         "substitutions": attr.label_keyed_string_dict(
             default = {},
@@ -84,7 +88,7 @@ _bzlws_tool_shell_script_src = rule(
     },
 )
 
-def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path = "", substitutions = {}, visibility = None, **kwargs):
+def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, visibility = None, **kwargs):
     """Copy generated files into workspace directory
 
     Args:
@@ -107,8 +111,13 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
 
              `{EXTNAME}` - File extension name (without the dot)
 
+             `{FILENAME}` - Full file name with extension
+
+             `{FILEPATH}` - Fulle file path. Any relative paths are stripped
+
              `{BASENAME}` - Path basename
 
+        strip_filepath_prefix: Strip prefix of `{FILEPATH}`
         force: Overwrite existing paths even if they are not files
         metafile_path: Path to metafile
         substitutions: BzlwsInfo label keyed, string valued, dictionary. The 
@@ -126,6 +135,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         name = sh_script_name,
         srcs = srcs,
         out = out,
+        strip_filepath_prefix = strip_filepath_prefix,
         force = force,
         metafile_path = metafile_path,
         substitutions = substitutions,
@@ -144,7 +154,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, metafile_path
         **kwargs
     )
 
-def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path = "", visibility = None, **kwargs):
+def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", visibility = None, **kwargs):
     """Symlink generated files into workspace directory
 
     Args:
@@ -167,8 +177,13 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
 
              `{EXTNAME}` - File extension name (without the dot)
 
+             `{FILENAME}` - Full file name with extension
+
+             `{FILEPATH}` - Fulle file path. Any relative paths are stripped
+
              `{BASENAME}` - Path basename
 
+        strip_filepath_prefix: Strip prefix of `{FILEPATH}`
         force: Overwrite existing paths even if they are not symlinks
         metafile_path: Path to metafile
         visibility: visibility of the executable target
@@ -182,6 +197,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, metafile_path
         name = sh_script_name,
         srcs = srcs,
         out = out,
+        strip_filepath_prefix = strip_filepath_prefix,
         force = force,
         metafile_path = metafile_path,
         tool = "bzlws/bzlws_link/bzlws_link",
