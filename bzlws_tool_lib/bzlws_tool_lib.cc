@@ -181,6 +181,7 @@ fs::path bzlws_tool_lib::get_src_out_path
 	, std::string      owner_label_str
 	, fs::path         src_path
 	, bool             force
+	, std::string      strip_filepath_prefix
 	)
 {
 	auto label = parse_label_string(owner_label_str);
@@ -188,6 +189,16 @@ fs::path bzlws_tool_lib::get_src_out_path
 	auto out_dir_input = std::string(argv[argc - 1]);
 	auto ext_str = src_path.extension().string();
 	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
+	auto filepath = fs::relative(src_path).generic_string();
+	while(filepath.find("../") != std::string::npos) {
+		substr_str(filepath, "../", "");
+	}
+
+	if(!strip_filepath_prefix.empty()) {
+		if(filepath.rfind(strip_filepath_prefix, 0) == 0) {
+			filepath = filepath.substr(strip_filepath_prefix.length());
+		}
+	}
 
 	substr_str(out_dir_input, "{BAZEL_LABEL_NAME}", label.name);
 	substr_str(out_dir_input, "{BAZEL_LABEL_PACKAGE}", label.package);
@@ -200,6 +211,8 @@ fs::path bzlws_tool_lib::get_src_out_path
 	substr_str(out_dir_input, "{EXT}", ext_str);
 	substr_str(out_dir_input, "{EXTNAME}", extname);
 	substr_str(out_dir_input, "{FILENAME}", src_path.filename().string());
+	substr_str(out_dir_input, "{FILEPATH}", filepath);
+
 	substr_str(out_dir_input, "{BASENAME}",
 		src_path.filename().replace_extension().string());
 
@@ -213,7 +226,8 @@ fs::path bzlws_tool_lib::get_src_out_path
 	if(!fs::exists(out_dir)) {
 		if(!force) {
 			std::cerr
-				<< "Out path directory does not exist: " << out_dir << std::endl;
+				<< "Out path directory does not exist: "
+				<< out_dir.generic_string() << std::endl;
 			tool_exit(exit_code::filesystem_no_force_error);
 		}
 
@@ -259,6 +273,12 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 			continue;
 		}
 
+		if(arg == "--strip_filepath_prefix") {
+			options.strip_filepath_prefix = next_arg();
+			substr_str(options.strip_filepath_prefix, "\\", "/");
+			continue;
+		}
+
 		if(arg == "--subst") {
 			options.substitution_keys[next_arg()].push_back(next_arg());
 			continue;
@@ -274,16 +294,39 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 			tool_exit(exit_code::source_path_does_not_exist);
 		}
 
-		auto src_out_path = get_src_out_path(
-			workspace_dir,
-			argc,
-			argv,
-			target_str,
-			src_path,
-			options.force
-		);
+		if(fs::is_directory(src_path)) {
 
-		options.srcs_info.push_back({src_path, src_out_path});
+			for(auto other_src_path : fs::recursive_directory_iterator(src_path)) {
+				if(fs::is_directory(other_src_path)) {
+					continue;
+				}
+
+				auto src_out_path = get_src_out_path(
+					workspace_dir,
+					argc,
+					argv,
+					target_str,
+					other_src_path,
+					options.force,
+					options.strip_filepath_prefix
+				);
+
+				options.srcs_info.push_back({other_src_path, src_out_path});
+			}
+
+		} else {
+			auto src_out_path = get_src_out_path(
+				workspace_dir,
+				argc,
+				argv,
+				target_str,
+				src_path,
+				options.force,
+				options.strip_filepath_prefix
+			);
+
+			options.srcs_info.push_back({src_path, src_out_path});
+		}
 	}
 
 	if(!options.substitution_keys.empty()) {

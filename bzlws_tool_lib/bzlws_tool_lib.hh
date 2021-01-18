@@ -44,6 +44,7 @@ namespace bzlws_tool_lib {
 		std::map<std::string, std::vector<std::string>> substitution_keys;
 		std::map<std::string, std::string> substitution_values;
 		std::string metafile_path;
+		std::string strip_filepath_prefix;
 		bool force = false;
 	};
 
@@ -81,6 +82,7 @@ namespace bzlws_tool_lib {
 		, std::string      owner_label_str
 		, fs::path         src_path
 		, bool             force
+		, std::string      strip_filepath_prefix
 		);
 
 	void remove_previous_generated_files

@@ -44,6 +44,7 @@ int main(int argc, char* argv[]) {
 
 		if(options.substitution_keys.empty()) {
 			fs::copy_file(src_path, new_src_path, ec);
+
 			if(ec) {
 				std::cerr
 					<< "[ERROR] Failed to copy " << src_path.generic_string() << " -> "
