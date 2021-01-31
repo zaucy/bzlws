@@ -3,16 +3,6 @@ load("//internal:bzlws_info.bzl", "BzlwsInfo")
 
 _sh_binary_suffix = "__bzlws_generator_output"
 
-_msvc_copts = ["/std:c++17"]
-_gcc_copts = ["-std=c++17"]
-
-_copts = select({
-    "@bazel_tools//src/conditions:windows": _msvc_copts,
-    "@bazel_tools//src/conditions:windows_msvc": _msvc_copts,
-    "@bazel_tools//src/conditions:windows_msys": _msvc_copts,
-    "//conditions:default": _gcc_copts,
-})
-
 def _get_full_label_string(label):
     if not label:
         return "@"
@@ -147,7 +137,6 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
     cc_binary(
         name = name,
         srcs = [":" + sh_script_name],
-        copts = _copts,
         deps = ["@bazel_tools//tools/cpp/runfiles"],
         data = ["@bzlws//bzlws_copy:bzlws_copy"] + srcs,
         visibility = visibility,
@@ -208,7 +197,6 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
     cc_binary(
         name = name,
         srcs = [":" + sh_script_name],
-        copts = _copts,
         deps = ["@bazel_tools//tools/cpp/runfiles"],
         data = ["@bzlws//bzlws_link:bzlws_link"] + srcs,
         visibility = visibility,

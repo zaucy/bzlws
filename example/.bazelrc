@@ -1,0 +1,3 @@
+build --compiler=msvc-cl
+build --cxxopt=/std:c++latest
+build --host_cxxopt=/std:c++latest
