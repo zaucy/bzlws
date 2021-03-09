@@ -290,7 +290,7 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 		if(!fs::exists(src_path)) {
 			std::cerr
 				<< "Source path does not exist: "
-				<< src_path.string() << std::endl;
+				<< src_path.generic_string() << std::endl;
 			tool_exit(exit_code::source_path_does_not_exist);
 		}
 

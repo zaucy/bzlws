@@ -1,8 +1,10 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//internal:copts.bzl", "copts")
 
 cc_library(
     name = "bzlws_tool_lib",
     visibility = ["//:__subpackages__"],
+    copts = copts,
     hdrs = ["bzlws_tool_lib.hh"],
     srcs = ["bzlws_tool_lib.cc"],
     deps = [
