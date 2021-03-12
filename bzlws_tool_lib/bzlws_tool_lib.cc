@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <memory>
 #include <sstream>
+#include <cstring>
 #include <yaml-cpp/yaml.h>
 
 #if _WIN32
