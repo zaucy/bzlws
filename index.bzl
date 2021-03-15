@@ -73,7 +73,7 @@ _bzlws_tool_shell_script_src = rule(
         "generator": attr.label(
             default = "@bzlws//generators/cpp",
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         )
     },
 )
