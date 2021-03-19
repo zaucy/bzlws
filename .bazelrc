@@ -1,0 +1,2 @@
+build --cxxopt=/std:c++latest
+build --host_cxxopt=/std:c++latest

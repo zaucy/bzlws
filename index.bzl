@@ -92,62 +92,56 @@ _bzlws_tool_shell_script_src = rule(
 def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, **kwargs):
     """Copy generated files into workspace directory
 
+    ```python
+    load("@bzlws//:index.bzl", "bzlws_copy")
+    ```
+
     Args:
-        name:
-            Name used for executable target
+        name: Name used for executable target
 
-        srcs:
-            List of files that should be copied
+        srcs: List of files that should be copied
 
-        out:
-            Output path within the workspace. Certain strings get replaced with
-             various information about
+        out: Output path within the workspace. Certain strings get replaced with
+            various information about
 
-             `{BAZEL_LABEL_NAME}` - Label name
+            `{BAZEL_LABEL_NAME}` - Label name
 
-             `{BAZEL_LABEL_PACKAGE}` - Label package
+            `{BAZEL_LABEL_PACKAGE}` - Label package
 
-             `{BAZEL_LABEL_WORKSPACE_NAME}`  - Workspace name of the label
+            `{BAZEL_LABEL_WORKSPACE_NAME}`  - Workspace name of the label
 
-             `{BAZEL_FULL_LABEL}` - Fulll label string
+            `{BAZEL_FULL_LABEL}` - Fulll label string
 
-             `{BAZEL_LABEL}` - Full label without the workspace name
+            `{BAZEL_LABEL}` - Full label without the workspace name
 
-             `{EXT}` - File extension (with the dot)
+            `{EXT}` - File extension (with the dot)
 
-             `{EXTNAME}` - File extension name (without the dot)
+            `{EXTNAME}` - File extension name (without the dot)
 
-             `{FILENAME}` - Full file name with extension
+            `{FILENAME}` - Full file name with extension
 
-             `{FILEPATH}` - Fulle file path. Any relative paths are stripped
+            `{FILEPATH}` - Fulle file path. Any relative paths are stripped
 
-             `{BASENAME}` - Path basename
+            `{BASENAME}` - Path basename
 
-        strip_filepath_prefix:
-            Strip prefix of `{FILEPATH}`
+        strip_filepath_prefix: Strip prefix of `{FILEPATH}`
 
-        force:
-            Overwrite existing paths even if they are not files
+        force: Overwrite existing paths even if they are not files
 
-        metafile_path:
-            Path to metafile
+        metafile_path: Path to metafile
 
-        substitutions:
-            BzlwsInfo label keyed, string valued, dictionary. The  values will
-            be replaced in the source files with the values from the
+        substitutions: BzlwsInfo label keyed, string valued, dictionary. The
+            values will be replaced in the source files with the values from the
             `bazel info` command. The available BzlwsInfo targets are in the
             `@bzlws//info` package.
 
-        stamp_substitutions:
-            Workspace status keyed, string valued, dictionary. The values will
-            be replaced in the sources files the values from the workspace
-            status matching the key.
+        stamp_substitutions: Workspace status keyed, string valued, dictionary.
+            The values will be replaced in the sources files the values from the
+            workspace status matching the key.
 
-        visibility:
-            visibility of the executable target
+        visibility: visibility of the executable target
 
-        **kwargs:
-            rest of arguments get passed to underlying targets
+        **kwargs: rest of arguments get passed to underlying targets
     """
     if out.startswith("/"):
         fail("out cannot start with '/'")
@@ -177,52 +171,49 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
     )
 
 def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", visibility = None, **kwargs):
-    """Symlink generated files into workspace directory
+    """ Symlink generated files into workspace directory
+    
+    ```python
+    load("@bzlws//:index.bzl", "bzlws_link")
+    ```
 
     Args:
-        name:
-            Name used for executable target
+        name: Name used for executable target
 
-        srcs:
-            List of files that should be symlinked
+        srcs: List of files that should be symlinked
 
-        out:
-            Output path within the workspace. Certain strings get replaced with
-             various information about each source target from `srcs`
+        out: Output path within the workspace. Certain strings get replaced with
+            various information about each source target from `srcs`
 
-             `{BAZEL_LABEL_NAME}` - Label name
+            `{BAZEL_LABEL_NAME}` - Label name
 
-             `{BAZEL_LABEL_PACKAGE}` - Label package
+            `{BAZEL_LABEL_PACKAGE}` - Label package
 
-             `{BAZEL_LABEL_WORKSPACE_NAME}`  - Workspace name of the label
+            `{BAZEL_LABEL_WORKSPACE_NAME}`  - Workspace name of the label
 
-             `{BAZEL_FULL_LABEL}` - Fulll label string
+            `{BAZEL_FULL_LABEL}` - Fulll label string
 
-             `{BAZEL_LABEL}` - Full label without the workspace name
+            `{BAZEL_LABEL}` - Full label without the workspace name
 
-             `{EXT}` - File extension (with the dot)
+            `{EXT}` - File extension (with the dot)
 
-             `{EXTNAME}` - File extension name (without the dot)
+            `{EXTNAME}` - File extension name (without the dot)
 
-             `{FILENAME}` - Full file name with extension
+            `{FILENAME}` - Full file name with extension
 
-             `{FILEPATH}` - Fulle file path. Any relative paths are stripped
+            `{FILEPATH}` - Fulle file path. Any relative paths are stripped
 
-             `{BASENAME}` - Path basename
+            `{BASENAME}` - Path basename
 
-        strip_filepath_prefix:
-            Strip prefix of `{FILEPATH}`
+        strip_filepath_prefix: Strip prefix of `{FILEPATH}`
 
-        force:
-            Overwrite existing paths even if they are not symlinks
-        metafile_path:
-            Path to metafile
+        force: Overwrite existing paths even if they are not symlinks
 
-        visibility:
-            visibility of the executable target
+        metafile_path: Path to metafile
 
-        **kwargs:
-            rest of arguments get passed to underlying targets
+        visibility: visibility of the executable target
+
+        **kwargs: rest of arguments get passed to underlying targets
     """
     if out.startswith("/"):
         fail("out cannot start with '/'")

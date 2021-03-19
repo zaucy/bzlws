@@ -1,5 +1,6 @@
 load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
 load("@bzlws//:index.bzl", "bzlws_copy")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -9,6 +10,21 @@ stardoc(
     name = "docs",
     input = "index.bzl",
     out = "index.md",
+    deps = [":rules_cc"],
+)
+
+# SEE: https://github.com/bazelbuild/stardoc/issues/92
+bzl_library(
+    name = "rules_cc",
+    srcs = [
+        "@rules_cc//cc:action_names.bzl",
+        "@rules_cc//cc:defs.bzl",
+        "@rules_cc//cc:find_cc_toolchain.bzl",
+        "@rules_cc//cc/private/rules_impl:cc_flags_supplier.bzl",
+        "@rules_cc//cc/private/rules_impl:cc_flags_supplier_lib.bzl",
+        "@rules_cc//cc/private/rules_impl:compiler_flag.bzl",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 bzlws_copy(
