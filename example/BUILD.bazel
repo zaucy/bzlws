@@ -85,3 +85,10 @@ bzlws_copy(
         "BUILD_HOST": "__BUILD_HOST__",
     },
 )
+
+bzlws_copy(
+    name = "stamp_out_path",
+    srcs = ["example.txt"],
+    force = True,
+    out = "ignored_folder/{BUILD_HOST}/{BUILD_USER}/{FILENAME}",
+)

@@ -89,6 +89,20 @@ _bzlws_tool_shell_script_src = rule(
     },
 )
 
+def _validate_required_attrs(rule_name, name, srcs, out):
+    
+    if not name:
+        fail("{} - missing name attribute".format(rule_name))
+
+    if not srcs or len(srcs) == 0:
+        fail("{} - missing srcs attribute or is empty".format(rule_name))
+
+    if not out:
+        fail("{} - missing out attribute".format(rule_name))
+
+    if out.startswith("/"):
+        fail("{} - out attribute cannot start with '/'".format(rule_name))
+
 def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, **kwargs):
     """Copy generated files into workspace directory
 
@@ -102,7 +116,19 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         srcs: List of files that should be copied
 
         out: Output path within the workspace. Certain strings get replaced with
-            various information about
+            workspace status values and information about the `srcs`. This
+            happens in 2 phases.
+
+            **Phase 1:**
+
+            The [workspace status](https://docs.bazel.build/versions/master/user-manual.html#workspace_status)
+            stamp values get replaced in this format: `{KEY}`. For example if
+            you would like to have the name of the host machine in your output
+            path you would put `out = "my/path/{BUILD_HOST}/{FILENAME}"`
+
+            **Phase 2:**
+
+            The following gets replaced about each items in `srcs`
 
             `{BAZEL_LABEL_NAME}` - Label name
 
@@ -143,8 +169,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
         **kwargs: rest of arguments get passed to underlying targets
     """
-    if out.startswith("/"):
-        fail("out cannot start with '/'")
+    _validate_required_attrs("bzlws_copy", name, srcs, out)
 
     sh_script_name = name + _sh_binary_suffix
     _bzlws_tool_shell_script_src(
@@ -183,7 +208,19 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
         srcs: List of files that should be symlinked
 
         out: Output path within the workspace. Certain strings get replaced with
-            various information about each source target from `srcs`
+            workspace status values and information about the `srcs`. This
+            happens in 2 phases.
+
+            **Phase 1:**
+
+            The [workspace status](https://docs.bazel.build/versions/master/user-manual.html#workspace_status)
+            stamp values get replaced in this format: `{KEY}`. For example if
+            you would like to have the name of the host machine in your output
+            path you would put `out = "my/path/{BUILD_HOST}/{FILENAME}"`
+
+            **Phase 2:**
+
+            The following gets replaced about each items in `srcs`
 
             `{BAZEL_LABEL_NAME}` - Label name
 
@@ -215,8 +252,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
 
         **kwargs: rest of arguments get passed to underlying targets
     """
-    if out.startswith("/"):
-        fail("out cannot start with '/'")
+    _validate_required_attrs("bzlws_link", name, srcs, out)
 
     sh_script_name = name + _sh_binary_suffix
     _bzlws_tool_shell_script_src(

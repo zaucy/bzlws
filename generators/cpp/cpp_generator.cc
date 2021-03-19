@@ -72,6 +72,20 @@ void for_each_status_item
   }
 }
 
+static void substr_str
+	( std::string&        str
+	, const std::string&  subst_id
+	, const std::string&  subst_value
+	)
+{
+	const auto subst_id_len = subst_id.length();
+	auto substr_id_idx = str.find(subst_id);
+	while(substr_id_idx != std::string::npos) {
+		str.replace(substr_id_idx, subst_id_len, subst_value);
+		substr_id_idx = str.find(subst_id);
+	}
+}
+
 int main(int argc, char* argv[]) {
 	bool force = false;
 	std::string output;
@@ -143,6 +157,8 @@ int main(int argc, char* argv[]) {
 
 	if(!stable_status_file_path.empty()) {
 		for_each_status_item(stable_status_file_path, [&](auto key, auto value) {
+			substr_str(out_path, "{" + key + "}", value);
+
 			auto find_itr = stamp_subst_map.find(key);
 			if(find_itr != stamp_subst_map.end()) {
 				forwarded_args.push_back("--subst");
@@ -156,6 +172,8 @@ int main(int argc, char* argv[]) {
 
 	if(!volatile_status_file_path.empty()) {
 		for_each_status_item(stable_status_file_path, [&](auto key, auto value) {
+			substr_str(out_path, "{" + key + "}", value);
+
 			auto find_itr = stamp_subst_map.find(key);
 			if(find_itr != stamp_subst_map.end()) {
 				forwarded_args.push_back("--subst");
