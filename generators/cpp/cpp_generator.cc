@@ -4,6 +4,8 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <map>
+#include <set>
 
 namespace fs = std::filesystem;
 
@@ -46,6 +48,30 @@ std::string escaped_string
 	return "R\"______(" + str + ")______\"";
 }
 
+template<typename Fn>
+void for_each_status_item
+  ( std::string  status_file_path
+  , Fn&&         fn
+  )
+{
+  std::string line;
+  std::string::size_type ws_idx;
+
+	std::ifstream status_file_stream(status_file_path);
+
+  // Reading file based on:
+  // https://docs.bazel.build/versions/master/user-manual.html#workspace_status
+  while(status_file_stream.good()) {
+    line.clear();
+    std::getline(status_file_stream, line);
+    if(line.empty()) continue;
+
+    ws_idx = line.find_first_of(' ');
+
+		fn(line.substr(0, ws_idx), line.substr(ws_idx + 1));
+  }
+}
+
 int main(int argc, char* argv[]) {
 	bool force = false;
 	std::string output;
@@ -53,6 +79,11 @@ int main(int argc, char* argv[]) {
 	std::vector<std::string> forwarded_args;
 	std::vector<std::array<std::string, 2>> paths;
 	std::string out_path = std::string(argv[argc-1]);
+
+	std::map<std::string, std::string> stamp_subst_map;
+	std::set<std::string> stamp_subst_used;
+	std::string stable_status_file_path;
+	std::string volatile_status_file_path;
 
 	for(int i=1; argc-1 > i; ++i) {
 		auto arg = std::string(argv[i]);
@@ -63,10 +94,21 @@ int main(int argc, char* argv[]) {
 		if(arg == "--tool") {
 			tool = std::string(argv[++i]);
 		} else
+		if(arg == "--stamp_subst") {
+			auto key = argv[++i];
+			auto value = argv[++i];
+			stamp_subst_map[key] = value;
+		} else
+		if(arg == "--stable_status") {
+			stable_status_file_path = argv[++i];
+		} else
+		if(arg == "--volatile_status") {
+			volatile_status_file_path = argv[++i];
+		} else
 		if(arg == "--force") {
 			forwarded_args.push_back(arg);
 		} else
-		if(arg == "--subst") {
+		if(arg == "--bazel_info_subst") {
 			forwarded_args.push_back(arg);
 			forwarded_args.push_back(argv[++i]);
 			forwarded_args.push_back(argv[++i]);
@@ -97,6 +139,40 @@ int main(int argc, char* argv[]) {
 	if(paths.empty()) {
 		std::cerr << "[ERROR] No sources provided" << std::endl;
 		return 1;
+	}
+
+	if(!stable_status_file_path.empty()) {
+		for_each_status_item(stable_status_file_path, [&](auto key, auto value) {
+			auto find_itr = stamp_subst_map.find(key);
+			if(find_itr != stamp_subst_map.end()) {
+				forwarded_args.push_back("--subst");
+				forwarded_args.push_back("\"" + find_itr->second + "\"");
+				forwarded_args.push_back("\"" + value + "\"");
+
+				stamp_subst_map.erase(find_itr);
+			}
+		});
+	}
+
+	if(!volatile_status_file_path.empty()) {
+		for_each_status_item(stable_status_file_path, [&](auto key, auto value) {
+			auto find_itr = stamp_subst_map.find(key);
+			if(find_itr != stamp_subst_map.end()) {
+				forwarded_args.push_back("--subst");
+				forwarded_args.push_back("\"" + find_itr->second + "\"");
+				forwarded_args.push_back("\"" + value + "\"");
+
+				stamp_subst_map.erase(find_itr);
+			}
+		});
+	}
+
+	if(!stamp_subst_map.empty()) {
+		std::cerr << "[WARNING] Unused stamp_substitutions: " << std::endl;
+
+		for(const auto& entry : stamp_subst_map) {
+			std::cerr << "  " << entry.first << std::endl;
+		}
 	}
 
 	std::ofstream out(output);

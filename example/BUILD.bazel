@@ -76,3 +76,12 @@ bzlws_copy(
         "@bzlws//info:workspace": "__workspace",
     },
 )
+
+bzlws_copy(
+    name = "stamp_subst_example",
+    srcs = ["stamp_info.txt"],
+    out = "ignored_folder/{FILENAME}",
+    stamp_substitutions = {
+        "BUILD_HOST": "__BUILD_HOST__",
+    },
+)

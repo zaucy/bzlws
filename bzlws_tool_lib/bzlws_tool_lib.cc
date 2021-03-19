@@ -280,8 +280,13 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 			continue;
 		}
 
+		if(arg == "--bazel_info_subst") {
+			options.bazel_info_subst_keys[next_arg()].push_back(next_arg());
+			continue;
+		}
+
 		if(arg == "--subst") {
-			options.substitution_keys[next_arg()].push_back(next_arg());
+			options.subst_values[next_arg()].push_back(next_arg());
 			continue;
 		}
 
@@ -330,9 +335,9 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 		}
 	}
 
-	if(!options.substitution_keys.empty()) {
+	if(!options.bazel_info_subst_keys.empty()) {
 		std::vector<std::string> subst_keys;
-		for(const auto& entry : options.substitution_keys) {
+		for(const auto& entry : options.bazel_info_subst_keys) {
 			subst_keys.push_back(entry.first);
 		}
 
@@ -342,9 +347,11 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 		fs::current_path(curr_path);
 
 		for(size_t i=0; subst_keys.size() > i; ++i) {
-			const auto& key = subst_keys[i];
+			const auto& bazel_info_key = subst_keys[i];
 			const auto& value = subst_values[i];
-			options.substitution_values[key] = value;
+			for(auto subst_key : options.bazel_info_subst_keys[bazel_info_key]) {
+				options.subst_values[subst_key].push_back(value);
+			}
 		}
 	}
 
@@ -362,11 +369,10 @@ void bzlws_tool_lib::copy_with_substitutions
 
 	while(!in_stream.eof()) {
 		std::getline(in_stream, line, '\n');
-		for(const auto& entry : options.substitution_keys) {
-			const auto& value = options.substitution_values.at(entry.first);
-			if(value.empty()) continue;
+		for(const auto& entry : options.subst_values) {
+			const auto& key = entry.first;
 
-			for(const auto& key : entry.second) {
+			for(const auto& value : entry.second) {
 				auto key_idx = line.find(key);
 				while(key_idx != std::string::npos) {
 					line.replace(key_idx, key.size(), value);
@@ -375,7 +381,11 @@ void bzlws_tool_lib::copy_with_substitutions
 			}
 		}
 
-		out_stream << line << '\n';
+		out_stream << line;
+
+		if(!in_stream.eof() && !in_stream.fail()) {
+			out_stream << '\n';
+		}
 	}
 }
 

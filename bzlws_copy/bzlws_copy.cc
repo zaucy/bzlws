@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 			<< fs::relative(new_src_path.string(), workspace_dir).generic_string()
 			<< std::endl;
 
-		if(options.substitution_keys.empty()) {
+		if(options.subst_values.empty()) {
 			fs::copy_file(src_path, new_src_path, ec);
 
 			if(ec) {

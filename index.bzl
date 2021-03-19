@@ -25,6 +25,9 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     args = ctx.actions.args()
 
     args.add("--tool", ctx.attr.tool)
+    args.add("--stable_status", ctx.info_file)
+    args.add("--volatile_status", ctx.version_file)
+
     if ctx.attr.force == True:
         args.add("--force")
 
@@ -36,7 +39,11 @@ def _bzlws_tool_shell_script_src_impl(ctx):
 
     for key in ctx.attr.substitutions:
         value = ctx.attr.substitutions[key]
-        args.add_all(["--subst", key[BzlwsInfo].name, value])
+        args.add_all(["--bazel_info_subst", key[BzlwsInfo].name, value])
+
+    for key in ctx.attr.stamp_substitutions:
+        value = ctx.attr.stamp_substitutions[key]
+        args.add_all(["--stamp_subst", key, value])
 
     args.add("--output", src)
     for src_file in ctx.files.srcs:
@@ -70,6 +77,10 @@ _bzlws_tool_shell_script_src = rule(
             providers = [BzlwsInfo],
             mandatory = False,
         ),
+        "stamp_substitutions": attr.string_dict(
+            default = {},
+            mandatory = False,
+        ),
         "generator": attr.label(
             default = "@bzlws//generators/cpp",
             executable = True,
@@ -78,13 +89,18 @@ _bzlws_tool_shell_script_src = rule(
     },
 )
 
-def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, visibility = None, **kwargs):
+def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, **kwargs):
     """Copy generated files into workspace directory
 
     Args:
-        name: Name used for executable target
-        srcs: List of files that should be copied
-        out: Output path within the workspace. Certain strings get replaced with
+        name:
+            Name used for executable target
+
+        srcs:
+            List of files that should be copied
+
+        out:
+            Output path within the workspace. Certain strings get replaced with
              various information about
 
              `{BAZEL_LABEL_NAME}` - Label name
@@ -107,15 +123,31 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
              `{BASENAME}` - Path basename
 
-        strip_filepath_prefix: Strip prefix of `{FILEPATH}`
-        force: Overwrite existing paths even if they are not files
-        metafile_path: Path to metafile
-        substitutions: BzlwsInfo label keyed, string valued, dictionary. The 
-                       values will be replaced in the source files with the
-                       values from the `bazel info` command. The available
-                       BzlwsInfo targets are in the `@bzlws//info` package.
-        visibility: visibility of the executable target
-        **kwargs: rest of arguments get passed to underlying targets
+        strip_filepath_prefix:
+            Strip prefix of `{FILEPATH}`
+
+        force:
+            Overwrite existing paths even if they are not files
+
+        metafile_path:
+            Path to metafile
+
+        substitutions:
+            BzlwsInfo label keyed, string valued, dictionary. The  values will
+            be replaced in the source files with the values from the
+            `bazel info` command. The available BzlwsInfo targets are in the
+            `@bzlws//info` package.
+
+        stamp_substitutions:
+            Workspace status keyed, string valued, dictionary. The values will
+            be replaced in the sources files the values from the workspace
+            status matching the key.
+
+        visibility:
+            visibility of the executable target
+
+        **kwargs:
+            rest of arguments get passed to underlying targets
     """
     if out.startswith("/"):
         fail("out cannot start with '/'")
@@ -129,6 +161,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         force = force,
         metafile_path = metafile_path,
         substitutions = substitutions,
+        stamp_substitutions = stamp_substitutions,
         tool = "bzlws/bzlws_copy/bzlws_copy",
         visibility = ["//visibility:private"],
         **kwargs,
@@ -147,9 +180,14 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
     """Symlink generated files into workspace directory
 
     Args:
-        name: Name used for executable target
-        srcs: List of files that should be symlinked
-        out: Output path within the workspace. Certain strings get replaced with
+        name:
+            Name used for executable target
+
+        srcs:
+            List of files that should be symlinked
+
+        out:
+            Output path within the workspace. Certain strings get replaced with
              various information about each source target from `srcs`
 
              `{BAZEL_LABEL_NAME}` - Label name
@@ -172,11 +210,19 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
 
              `{BASENAME}` - Path basename
 
-        strip_filepath_prefix: Strip prefix of `{FILEPATH}`
-        force: Overwrite existing paths even if they are not symlinks
-        metafile_path: Path to metafile
-        visibility: visibility of the executable target
-        **kwargs: rest of arguments get passed to underlying targets
+        strip_filepath_prefix:
+            Strip prefix of `{FILEPATH}`
+
+        force:
+            Overwrite existing paths even if they are not symlinks
+        metafile_path:
+            Path to metafile
+
+        visibility:
+            visibility of the executable target
+
+        **kwargs:
+            rest of arguments get passed to underlying targets
     """
     if out.startswith("/"):
         fail("out cannot start with '/'")

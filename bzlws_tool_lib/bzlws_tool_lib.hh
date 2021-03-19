@@ -41,8 +41,8 @@ namespace bzlws_tool_lib {
 
 	struct options {
 		std::vector<src_info> srcs_info;
-		std::map<std::string, std::vector<std::string>> substitution_keys;
-		std::map<std::string, std::string> substitution_values;
+		std::map<std::string, std::vector<std::string>> bazel_info_subst_keys;
+		std::map<std::string, std::vector<std::string>> subst_values;
 		std::string metafile_path;
 		std::string strip_filepath_prefix;
 		bool force = false;
