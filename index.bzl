@@ -103,7 +103,7 @@ def _validate_required_attrs(rule_name, name, srcs, out):
     if out.startswith("/"):
         fail("{} - out attribute cannot start with '/'".format(rule_name))
 
-def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, **kwargs):
+def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, tags = [], **kwargs):
     """Copy generated files into workspace directory
 
     ```python
@@ -167,6 +167,8 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
         visibility: visibility of the executable target
 
+        tags: forwarded to underlying targets
+
         **kwargs: rest of arguments get passed to underlying targets
     """
     _validate_required_attrs("bzlws_copy", name, srcs, out)
@@ -183,6 +185,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         stamp_substitutions = stamp_substitutions,
         tool = "bzlws/bzlws_copy/bzlws_copy",
         visibility = ["//visibility:private"],
+        tags = tags,
         **kwargs,
     )
 
@@ -192,6 +195,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         deps = ["@bazel_tools//tools/cpp/runfiles"],
         data = ["@bzlws//bzlws_copy:bzlws_copy"] + srcs,
         visibility = visibility,
+        tags = tags + ["ibazel_notify_changes"],
         **kwargs
     )
 

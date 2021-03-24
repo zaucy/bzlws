@@ -1,4 +1,17 @@
+#include <cstdlib>
+#include <string>
+#include <iostream>
 #include "bzlws_tool_lib/bzlws_tool_lib.hh"
+
+static void copy_files
+	( const std::filesystem::path&    workspace_dir
+	, const bzlws_tool_lib::options&  options
+	);
+
+static void copy_file
+	( const bzlws_tool_lib::options&   options
+	, const bzlws_tool_lib::src_info&  src_info
+	);
 
 int main(int argc, char* argv[]) {
 	using namespace bzlws_tool_lib;
@@ -6,7 +19,6 @@ int main(int argc, char* argv[]) {
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
 	auto options = parse_argv(workspace_dir, argc, argv);
-
 	
 	auto wsDirSz = workspace_dir.generic_string().size();
 
@@ -20,6 +32,37 @@ int main(int argc, char* argv[]) {
 			options.metafile_path
 		);
 	}
+
+	copy_files(workspace_dir, options);
+
+	if(!options.metafile_path.empty()) {
+		bzlws_tool_lib::write_generated_metadata_file(
+			workspace_dir,
+			options.metafile_path,
+			options.srcs_info
+		);
+	}
+
+	auto ibazel = std::string(std::getenv("IBAZEL_NOTIFY_CHANGES"));
+	if(ibazel == "y") {
+		std::string notice;
+		do {
+			std::getline(std::cin, notice);
+			if(notice == "IBAZEL_BUILD_COMPLETED SUCCESS") {
+				copy_files(workspace_dir, options);
+			}
+		} while(!notice.empty());
+	}
+
+	return 0;
+}
+
+void copy_files
+	( const std::filesystem::path&    workspace_dir
+	, const bzlws_tool_lib::options&  options
+	)
+{
+	using namespace bzlws_tool_lib;
 
 	for(const auto& info : options.srcs_info) {
 		const auto& src_path = info.src_path;
@@ -56,14 +99,12 @@ int main(int argc, char* argv[]) {
 			bzlws_tool_lib::copy_with_substitutions(options, info);
 		}
 	}
+}
 
-	if(!options.metafile_path.empty()) {
-		bzlws_tool_lib::write_generated_metadata_file(
-			workspace_dir,
-			options.metafile_path,
-			options.srcs_info
-		);
-	}
+void copy_file
+	( const bzlws_tool_lib::options&   options
+	, const bzlws_tool_lib::src_info&  src_info
+	)
+{
 
-	return 0;
 }
