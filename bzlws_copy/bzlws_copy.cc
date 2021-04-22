@@ -1,6 +1,7 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
+#include <exception>
 #include "bzlws_tool_lib/bzlws_tool_lib.hh"
 
 static void copy_files
@@ -15,6 +16,19 @@ static void copy_file
 
 int main(int argc, char* argv[]) {
 	using namespace bzlws_tool_lib;
+
+	std::set_terminate([] {
+		std::exception_ptr eptr = std::current_exception();
+		try {
+			if(eptr) {
+				std::rethrow_exception(eptr);
+			}
+		} catch(const std::exception& err) {
+			std::cerr << "[FATAL] Unhandled exception: " << err.what() << std::endl;
+		}
+
+		std::abort();
+	});
 
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
@@ -43,8 +57,8 @@ int main(int argc, char* argv[]) {
 		);
 	}
 
-	auto ibazel = std::string(std::getenv("IBAZEL_NOTIFY_CHANGES"));
-	if(ibazel == "y") {
+	auto ibazel = std::getenv("IBAZEL_NOTIFY_CHANGES");
+	if(ibazel != nullptr && std::string(ibazel) == "y") {
 		std::string notice;
 		do {
 			std::getline(std::cin, notice);
@@ -54,6 +68,7 @@ int main(int argc, char* argv[]) {
 		} while(!notice.empty());
 	}
 
+	std::cout << "Success!" << std::endl;
 	return 0;
 }
 
@@ -99,12 +114,4 @@ void copy_files
 			bzlws_tool_lib::copy_with_substitutions(options, info);
 		}
 	}
-}
-
-void copy_file
-	( const bzlws_tool_lib::options&   options
-	, const bzlws_tool_lib::src_info&  src_info
-	)
-{
-
 }
