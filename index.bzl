@@ -24,10 +24,6 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     src = ctx.actions.declare_file(src_filename)
     args = ctx.actions.args()
 
-    args.add("--tool", ctx.attr.tool)
-    args.add("--stable_status", ctx.info_file)
-    args.add("--volatile_status", ctx.version_file)
-
     if ctx.attr.force == True:
         args.add("--force")
 
@@ -45,23 +41,37 @@ def _bzlws_tool_shell_script_src_impl(ctx):
         value = ctx.attr.stamp_substitutions[key]
         args.add_all(["--stamp_subst", key, value])
 
-    args.add("--output", src)
     for src_file in ctx.files.srcs:
         src_label_str = _get_full_label_string(src_file.owner)
         src_file_path = _get_file_path(ctx, src_file)
         args.add(src_label_str)
         args.add(src_file_path)
 
-    args.add(ctx.attr.out)
+    params_file = ctx.actions.declare_file(ctx.attr.name + ".params")
+
+    ctx.actions.write(
+        output = params_file,
+        content = args
+    )
+
+    action_args = ctx.actions.args()
+    # needs to be added well before srcs because the underlying tool uses this
+    # option to parse other options
+    action_args.add("--output", ctx.attr.out)
+    action_args.add("--tool", ctx.attr.tool)
+    action_args.add("--stable_status", ctx.info_file)
+    action_args.add("--volatile_status", ctx.version_file)
+    action_args.add("--generated_script_path", src)
+    action_args.add("--params_file", params_file)
 
     ctx.actions.run(
         outputs = [src],
-        inputs = ctx.files.srcs,
+        inputs = ctx.files.srcs + [params_file],
         executable = ctx.executable.generator,
-        arguments = [args],
+        arguments = [action_args],
     )
 
-    return DefaultInfo(files = depset([src]))
+    return DefaultInfo(files = depset([src, params_file]))
 
 _bzlws_tool_shell_script_src = rule(
     implementation = _bzlws_tool_shell_script_src_impl,
@@ -193,7 +203,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         name = name,
         srcs = [":" + sh_script_name],
         deps = ["@bazel_tools//tools/cpp/runfiles"],
-        data = ["@bzlws//bzlws_copy:bzlws_copy"] + srcs,
+        data = srcs + ["@bzlws//bzlws_copy:bzlws_copy"],
         visibility = visibility,
         tags = tags + ["ibazel_notify_changes"],
         **kwargs

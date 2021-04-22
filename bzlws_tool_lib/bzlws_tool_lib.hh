@@ -45,6 +45,7 @@ namespace bzlws_tool_lib {
 		std::map<std::string, std::vector<std::string>> subst_values;
 		std::string metafile_path;
 		std::string strip_filepath_prefix;
+		std::string output_path;
 		bool force = false;
 	};
 
@@ -77,8 +78,7 @@ namespace bzlws_tool_lib {
 
 	fs::path get_src_out_path
 		( const fs::path&  workspace_dir
-		, int              argc
-		, char**           argv
+		, std::string      out_dir_input
 		, std::string      owner_label_str
 		, fs::path         src_path
 		, bool             force

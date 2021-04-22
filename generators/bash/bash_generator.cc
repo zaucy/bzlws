@@ -24,17 +24,22 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
 
 int main(int argc, char* argv[]) {
 	bool force = false;
-	std::string output;
+	std::string generated_script_path;
 	std::string tool;
 	std::vector<std::string> forwarded_args;
 	std::vector<std::array<std::string, 2>> paths;
-	std::string out_path = std::string(argv[argc-1]);
+	std::string out_path;
 
 	for(int i=1; argc-1 > i; ++i) {
 		auto arg = std::string(argv[i]);
 
+		if(arg == "--generated_script_path") {
+			generated_script_path = std::string(argv[++i]);
+		} else
 		if(arg == "--output") {
-			output = std::string(argv[++i]);
+			out_path = std::string(argv[++i]);
+			forwarded_args.push_back("--output");
+			forwarded_args.push_back(out_path);
 		} else
 		if(arg == "--tool") {
 			tool = std::string(argv[++i]);
@@ -56,7 +61,12 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(output.empty()) {
+	if(generated_script_path.empty()) {
+		std::cerr << "[ERROR] missing --generated_script_path" << std::endl;
+		return 1;
+	}
+
+	if(out_path.empty()) {
 		std::cerr << "[ERROR] missing --output" << std::endl;
 		return 1;
 	}
@@ -71,7 +81,7 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	std::ofstream out(output);
+	std::ofstream out(generated_script_path);
 
 	out << SCRIPT_SRC_START << "$(rlocation " << tool << ") \\\n";
 

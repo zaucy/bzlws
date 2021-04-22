@@ -6,6 +6,7 @@
 #include <memory>
 #include <sstream>
 #include <cstring>
+#include <string>
 #include <yaml-cpp/yaml.h>
 
 #if _WIN32
@@ -177,8 +178,7 @@ void bzlws_tool_lib::substr_str
 
 fs::path bzlws_tool_lib::get_src_out_path
 	( const fs::path&  workspace_dir
-	, int              argc
-	, char**           argv
+	, std::string      out_dir_input
 	, std::string      owner_label_str
 	, fs::path         src_path
 	, bool             force
@@ -187,7 +187,6 @@ fs::path bzlws_tool_lib::get_src_out_path
 {
 	auto label = parse_label_string(owner_label_str);
 
-	auto out_dir_input = std::string(argv[argc - 1]);
 	auto ext_str = src_path.extension().string();
 	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
 	auto filepath = fs::relative(src_path).generic_string();
@@ -243,6 +242,89 @@ fs::path bzlws_tool_lib::get_src_out_path
 	return out_path;
 }
 
+template<typename NextArgFnT>
+static void parse_arg
+	( const std::string&        arg
+	, const fs::path&           workspace_dir
+	, bzlws_tool_lib::options&  options
+	, NextArgFnT                next_arg
+	)
+{
+	if(arg == "--force") {
+		options.force = true;
+		return;
+	}
+
+	if(arg == "--metafile_out") {
+		options.metafile_path = next_arg();
+		return;
+	}
+
+	if(arg == "--strip_filepath_prefix") {
+		options.strip_filepath_prefix = next_arg();
+		bzlws_tool_lib::substr_str(options.strip_filepath_prefix, "\\", "/");
+		return;
+	}
+
+	if(arg == "--bazel_info_subst") {
+		options.bazel_info_subst_keys[next_arg()].push_back(next_arg());
+		return;
+	}
+
+	if(arg == "--subst") {
+		options.subst_values[next_arg()].push_back(next_arg());
+		return;
+	}
+
+	if(arg == "--output") {
+		options.output_path = next_arg();
+		std::cerr << "options.output_path = " << options.output_path << std::endl;
+		return;
+	}
+
+	auto target_str = arg;
+	auto src_path = workspace_dir / next_arg();
+
+	if(!fs::exists(src_path)) {
+		std::cerr
+			<< "Source path does not exist: "
+			<< src_path.generic_string() << std::endl;
+		tool_exit(bzlws_tool_lib::exit_code::source_path_does_not_exist);
+	}
+
+	if(fs::is_directory(src_path)) {
+
+		for(auto other_src_path : fs::recursive_directory_iterator(src_path)) {
+			if(fs::is_directory(other_src_path)) {
+				continue;
+			}
+
+			auto src_out_path = bzlws_tool_lib::get_src_out_path(
+				workspace_dir,
+				options.output_path,
+				target_str,
+				other_src_path,
+				options.force,
+				options.strip_filepath_prefix
+			);
+
+			options.srcs_info.push_back({other_src_path, src_out_path});
+		}
+
+	} else {
+		auto src_out_path = bzlws_tool_lib::get_src_out_path(
+			workspace_dir,
+			options.output_path,
+			target_str,
+			src_path,
+			options.force,
+			options.strip_filepath_prefix
+		);
+
+		options.srcs_info.push_back({src_path, src_out_path});
+	}
+}
+
 bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 	( const fs::path&  workspace_dir
 	, int              argc
@@ -264,74 +346,36 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 		};
 
 		auto arg = std::string(argv[i]);
-		if(arg == "--force") {
-			options.force = true;
-			continue;
-		}
 
-		if(arg == "--metafile_out") {
-			options.metafile_path = next_arg();
-			continue;
-		}
+		if(arg == "--params_file") {
+			auto param_file = next_arg();
+			if(!fs::exists(workspace_dir / param_file)) {
+				std::cerr
+					<< "[ERROR] Unable to read params file: " << param_file << std::endl;
+				tool_exit(exit_code::filesystem_error);
+			}
 
-		if(arg == "--strip_filepath_prefix") {
-			options.strip_filepath_prefix = next_arg();
-			substr_str(options.strip_filepath_prefix, "\\", "/");
-			continue;
-		}
+			std::ifstream param_file_stream(workspace_dir / param_file);
 
-		if(arg == "--bazel_info_subst") {
-			options.bazel_info_subst_keys[next_arg()].push_back(next_arg());
-			continue;
-		}
-
-		if(arg == "--subst") {
-			options.subst_values[next_arg()].push_back(next_arg());
-			continue;
-		}
-
-		auto target_str = arg;
-		auto src_path = workspace_dir / next_arg();
-
-		if(!fs::exists(src_path)) {
-			std::cerr
-				<< "Source path does not exist: "
-				<< src_path.generic_string() << std::endl;
-			tool_exit(exit_code::source_path_does_not_exist);
-		}
-
-		if(fs::is_directory(src_path)) {
-
-			for(auto other_src_path : fs::recursive_directory_iterator(src_path)) {
-				if(fs::is_directory(other_src_path)) {
-					continue;
+			auto get_next_line = [&]{
+				std::string next_line;
+				if(!std::getline(param_file_stream, next_line, '\n')) {
+					std::cerr
+						<< "Argv access out of range at index " << i
+						<< " (improperly formated) " << std::endl;
+					tool_exit(exit_code::invalid_arguments);
 				}
 
-				auto src_out_path = get_src_out_path(
-					workspace_dir,
-					argc,
-					argv,
-					target_str,
-					other_src_path,
-					options.force,
-					options.strip_filepath_prefix
-				);
+				return next_line;
+			};
 
-				options.srcs_info.push_back({other_src_path, src_out_path});
+			std::string line;
+			while(std::getline(param_file_stream, line, '\n')) {
+				parse_arg(line, workspace_dir, options, get_next_line);
 			}
 
 		} else {
-			auto src_out_path = get_src_out_path(
-				workspace_dir,
-				argc,
-				argv,
-				target_str,
-				src_path,
-				options.force,
-				options.strip_filepath_prefix
-			);
-
-			options.srcs_info.push_back({src_path, src_out_path});
+			parse_arg(arg, workspace_dir, options, next_arg);
 		}
 	}
 
