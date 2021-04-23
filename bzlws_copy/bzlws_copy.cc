@@ -14,7 +14,11 @@ static void copy_file
 	, const bzlws_tool_lib::src_info&  src_info
 	);
 
-int main(int argc, char* argv[]) {
+int bzlws_copy
+	( const char*                      argv0
+	, const std::vector<std::string>&  args
+	)
+{
 	using namespace bzlws_tool_lib;
 
 	std::set_terminate([] {
@@ -32,7 +36,7 @@ int main(int argc, char* argv[]) {
 
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto options = parse_argv(workspace_dir, argc, argv);
+	auto options = parse_args(workspace_dir, argv0, args);
 	
 	auto wsDirSz = workspace_dir.generic_string().size();
 

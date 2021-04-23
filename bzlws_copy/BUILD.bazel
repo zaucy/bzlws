@@ -1,10 +1,11 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("//internal:copts.bzl", "copts")
 
-cc_binary(
+cc_library(
     name = "bzlws_copy",
     visibility = ["//visibility:public"],
     copts = copts,
+    hdrs = ["bzlws_copy.hh"],
     srcs = ["bzlws_copy.cc"],
     deps = [
         "//bzlws_tool_lib",

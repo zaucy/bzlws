@@ -1,11 +1,15 @@
 #include "bzlws_tool_lib/bzlws_tool_lib.hh"
 
-int main(int argc, char* argv[]) {
+int bzlws_link
+	( const char*                      argv0
+	, const std::vector<std::string>&  args
+	)
+{
 	using namespace bzlws_tool_lib;
 
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto options = parse_argv(workspace_dir, argc, argv);
+	auto options = parse_args(workspace_dir, argv0, args);
 	
 	for(const auto& info : options.srcs_info) {
 		bzlignore.assert_ignored_path(info.new_src_path);

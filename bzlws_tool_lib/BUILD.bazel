@@ -3,11 +3,12 @@ load("//internal:copts.bzl", "copts")
 
 cc_library(
     name = "bzlws_tool_lib",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//visibility:public"],
     copts = copts,
     hdrs = ["bzlws_tool_lib.hh"],
     srcs = ["bzlws_tool_lib.cc"],
     deps = [
         "@com_github_jbeder_yaml_cpp//:yaml-cpp",
+        "@bazel_tools//tools/cpp/runfiles",
     ],
 )

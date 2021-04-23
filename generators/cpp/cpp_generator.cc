@@ -204,52 +204,33 @@ int main(int argc, char* argv[]) {
 
 	std::ofstream out(generated_script_path);
 
-	out << SCRIPT_SRC_START;
-
-#if _WIN32
-	tool += ".exe";
-#endif
-
-	out << "\tcmd += runfiles->Rlocation(" << escaped_string(tool) << ");\n";
-	out << "\tcmd += \" \";\n";
+	out
+		<< "#include <string>\n"
+		<< "#include <vector>\n"
+		<< "#include \"" << tool << "/" << tool << ".hh\"\n"
+		<< "int main(int argc, char* argv[]) {\n"
+		<< "\tstd::vector<std::string> args;\n";
 
 	for(const auto& forwarded_arg : forwarded_args) {
-		out << "\tcmd += " << escaped_string(" " + forwarded_arg + " ") << ";\n";
+		out << "\targs.emplace_back(" << escaped_string(forwarded_arg) << ");\n";
 	}
 
 	auto idx = 0;
 	for(const auto& [target_str, path] : paths) {
 		const std::string path_var_name = "p" + std::to_string(idx) + "_";
-		out << "\tcmd += " << escaped_string("  " + target_str + " ") << ";\n";
+		out << "\targs.emplace_back(" << escaped_string(target_str) << ");\n";
 
 		out
-			<< "\n\tauto " << path_var_name << " = "
-			<< "runfiles->Rlocation(" << escaped_string(path) << ");\n"
-			<< "\tif(" << path_var_name << ".empty()) {\n"
-			<< "\t\tstd::cerr << \"[ERROR] Cannot find runfile '\" << "
-			<< escaped_string(path) << " << \"'\" << std::endl;\n"
-			<< "\t\tstd::exit(1);\n"
-			<< "\t}\n";
-
-		out
-			<< "\tif(!std::filesystem::exists(" + path_var_name + ")) {\n"
-			<< "\t\t" << path_var_name << " = " << escaped_string(path) << ";\n"
-			<< "\t}\n";
-
-		out
-			<< "\tcmd += std::filesystem::path("
-			<< path_var_name
-			<< ").make_preferred().string() + \" \";\n";
+			<< "\targs.emplace_back(std::filesystem::path("
+			<< path_var_name << ").make_preferred().string());\n";
 
 		idx += 1;
 	}
 
 	out
-		<< "\tcmd += ("
-		<< "get_build_workspace_dir() / " << escaped_string(out_path)
-		<< ").string();\n";
+		<< "\treturn " << tool << "(argv[0], args);\n"
+		<< "}\n";
 
-	out << SCRIPT_SRC_END;
 
 	return 0;
 }

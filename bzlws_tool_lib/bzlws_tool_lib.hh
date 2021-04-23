@@ -54,6 +54,11 @@ namespace bzlws_tool_lib {
 		, int              argc
 		, char**           argv
 		);
+	options parse_args
+		( const fs::path&                  workspace_dir
+		, const char*                      arv0
+		, const std::vector<std::string>&  args
+		);
 
 	std::vector<std::string> get_bazel_info
 		( const std::vector<std::string>& info_keys

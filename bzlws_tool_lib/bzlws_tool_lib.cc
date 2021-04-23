@@ -8,6 +8,7 @@
 #include <cstring>
 #include <string>
 #include <yaml-cpp/yaml.h>
+#include "tools/cpp/runfiles/runfiles.h"
 
 #if _WIN32
 	#define popen _popen
@@ -244,10 +245,11 @@ fs::path bzlws_tool_lib::get_src_out_path
 
 template<typename NextArgFnT>
 static void parse_arg
-	( const std::string&        arg
-	, const fs::path&           workspace_dir
-	, bzlws_tool_lib::options&  options
-	, NextArgFnT                next_arg
+	( const std::string&                      arg
+	, const fs::path&                         workspace_dir
+	, bzlws_tool_lib::options&                options
+	, NextArgFnT                              next_arg
+	, bazel::tools::cpp::runfiles::Runfiles&  runfiles
 	)
 {
 	if(arg == "--force") {
@@ -282,12 +284,23 @@ static void parse_arg
 	}
 
 	auto target_str = arg;
-	auto src_path = workspace_dir / next_arg();
+	const std::string potential_src_path = next_arg();
+	std::string src_path = potential_src_path;
 
 	if(!fs::exists(src_path)) {
+		// If the file doesn't exist from our current directory check the runfiles
+		src_path = runfiles.Rlocation(potential_src_path);
+	}
+
+	if(src_path.empty() || !fs::exists(src_path)) {
+		// If we still cannot find the file try from the workspace directory
+		src_path = (workspace_dir / potential_src_path).make_preferred().string();
+	}
+
+	if(src_path.empty() || !fs::exists(src_path)) {
 		std::cerr
 			<< "Source path does not exist: "
-			<< src_path.generic_string() << std::endl;
+			<< potential_src_path << std::endl;
 		tool_exit(bzlws_tool_lib::exit_code::source_path_does_not_exist);
 	}
 
@@ -324,27 +337,39 @@ static void parse_arg
 	}
 }
 
-bzlws_tool_lib::options bzlws_tool_lib::parse_argv
-	( const fs::path&  workspace_dir
-	, int              argc
-	, char**           argv
+bzlws_tool_lib::options bzlws_tool_lib::parse_args
+	( const fs::path&                  workspace_dir
+	, const char*                      arv0
+	, const std::vector<std::string>&  args
 	)
 {
+	using bazel::tools::cpp::runfiles::Runfiles;
+
+	std::string cmd;
+	std::string error;
+	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(arv0, &error));
+	if(!error.empty()) {
+		std::cerr
+			<< "[[RUNFILES ERROR]]" << std::endl
+			<< "  " << error << std::endl;
+		std::exit(1);
+	}
+
 	bzlws_tool_lib::options options;
 
-	for(int i=1; argc-1 > i; i++) {
+	for(int i=0; args.size() > i; ++i) {
 		auto next_arg = [&] {
-			if(i+1 > argc-1) {
+			if(i+1 > args.size()-1) {
 				std::cerr
 					<< "Argv access out of range at index " << i
 					<< " (improperly formated) " << std::endl;
 				tool_exit(exit_code::invalid_arguments);
 			}
 
-			return std::string(argv[++i]);
+			return std::string(args[++i]);
 		};
 
-		auto arg = std::string(argv[i]);
+		auto arg = std::string(args[i]);
 
 		if(arg == "--params_file") {
 			auto param_file = next_arg();
@@ -370,11 +395,11 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 
 			std::string line;
 			while(std::getline(param_file_stream, line, '\n')) {
-				parse_arg(line, workspace_dir, options, get_next_line);
+				parse_arg(line, workspace_dir, options, get_next_line, *runfiles);
 			}
 
 		} else {
-			parse_arg(arg, workspace_dir, options, next_arg);
+			parse_arg(arg, workspace_dir, options, next_arg, *runfiles);
 		}
 	}
 
@@ -399,6 +424,19 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_argv
 	}
 
 	return options;
+}
+
+bzlws_tool_lib::options bzlws_tool_lib::parse_argv
+	( const fs::path&  workspace_dir
+	, int              argc
+	, char**           argv
+	)
+{
+	std::vector<std::string> args;
+	for(int i=1; argc > i; ++i) {
+		args.emplace_back(argv[i]);
+	}
+	return parse_args(workspace_dir, argv[0], args);
 }
 
 void bzlws_tool_lib::copy_with_substitutions

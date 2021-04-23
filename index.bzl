@@ -15,9 +15,6 @@ def _get_file_path(ctx, file):
 
     return file.path
 
-def _file_owner_label_pair(file):
-    return [_get_full_label_string(file.owner), _get_file_path(file)]
-
 def _bzlws_tool_shell_script_src_impl(ctx):
     name = ctx.attr.name
     src_filename = name[:-len(_sh_binary_suffix)] + ".cc"
@@ -193,7 +190,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         metafile_path = metafile_path,
         substitutions = substitutions,
         stamp_substitutions = stamp_substitutions,
-        tool = "bzlws/bzlws_copy/bzlws_copy",
+        tool = "bzlws_copy",
         visibility = ["//visibility:private"],
         tags = tags,
         **kwargs,
@@ -202,8 +199,8 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
     cc_binary(
         name = name,
         srcs = [":" + sh_script_name],
-        deps = ["@bazel_tools//tools/cpp/runfiles"],
-        data = srcs + ["@bzlws//bzlws_copy:bzlws_copy"],
+        deps = ["@bzlws//bzlws_copy"],
+        data = srcs,
         visibility = visibility,
         tags = tags + ["ibazel_notify_changes"],
         **kwargs
@@ -276,7 +273,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
         strip_filepath_prefix = strip_filepath_prefix,
         force = force,
         metafile_path = metafile_path,
-        tool = "bzlws/bzlws_link/bzlws_link",
+        tool = "bzlws_link",
         visibility = ["//visibility:private"],
         **kwargs,
     )
@@ -284,8 +281,8 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
     cc_binary(
         name = name,
         srcs = [":" + sh_script_name],
-        deps = ["@bazel_tools//tools/cpp/runfiles"],
-        data = ["@bzlws//bzlws_link:bzlws_link"] + srcs,
+        deps = ["@bzlws//bzlws_link"],
+        data = srcs,
         visibility = visibility,
         **kwargs
     )
