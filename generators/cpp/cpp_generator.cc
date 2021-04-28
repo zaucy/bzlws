@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
 
 	if(!volatile_status_file_path.empty()) {
 		for_each_status_item(stable_status_file_path, [&](auto key, auto value) {
-			substr_str(out_path, "{" + key + "}", value);\
+			substr_str(out_path, "{" + key + "}", value);
 
 			auto find_itr = stamp_subst_map.find(key);
 			if(find_itr != stamp_subst_map.end()) {
@@ -191,8 +191,6 @@ int main(int argc, char* argv[]) {
 			}
 		});
 	}
-
-	std::cerr << "out_path = " << out_path << std::endl;
 
 	forwarded_args.insert(forwarded_args.begin(), out_path);
 	forwarded_args.insert(forwarded_args.begin(), "--output");
