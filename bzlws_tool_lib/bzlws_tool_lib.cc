@@ -280,6 +280,7 @@ static void parse_arg
 
 	if(arg == "--output") {
 		options.output_path = next_arg();
+		std::cerr << "options.output_path = " << options.output_path << std::endl;
 		return;
 	}
 
@@ -302,6 +303,13 @@ static void parse_arg
 			<< "Source path does not exist: "
 			<< potential_src_path << std::endl;
 		tool_exit(bzlws_tool_lib::exit_code::source_path_does_not_exist);
+	}
+
+	if(options.output_path.empty()) {
+		std::cerr
+			<< "[ERROR] --output flag must come before any non-flag arugments"
+			<< std::endl;
+		tool_exit(bzlws_tool_lib::exit_code::invalid_arguments);
 	}
 
 	if(fs::is_directory(src_path)) {
