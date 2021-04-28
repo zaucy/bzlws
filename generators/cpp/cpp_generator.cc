@@ -107,8 +107,6 @@ int main(int argc, char* argv[]) {
 		} else
 		if(arg == "--output") {
 			out_path = std::string(argv[++i]);
-			forwarded_args.push_back("--output");
-			forwarded_args.push_back(out_path);
 		} else
 		if(arg == "--tool") {
 			tool = std::string(argv[++i]);
@@ -193,6 +191,9 @@ int main(int argc, char* argv[]) {
 			}
 		});
 	}
+
+	forwarded_args.insert(forwarded_args.begin(), out_path);
+	forwarded_args.insert(forwarded_args.begin(), "--output");
 
 	if(!stamp_subst_map.empty()) {
 		std::cerr << "[WARNING] Unused stamp_substitutions: " << std::endl;

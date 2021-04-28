@@ -304,6 +304,13 @@ static void parse_arg
 		tool_exit(bzlws_tool_lib::exit_code::source_path_does_not_exist);
 	}
 
+	if(options.output_path.empty()) {
+		std::cerr
+			<< "[ERROR] --output flag must come before any non-flag arugments"
+			<< std::endl;
+		tool_exit(bzlws_tool_lib::exit_code::invalid_arguments);
+	}
+
 	if(fs::is_directory(src_path)) {
 
 		for(auto other_src_path : fs::recursive_directory_iterator(src_path)) {
