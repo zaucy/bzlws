@@ -280,7 +280,6 @@ static void parse_arg
 
 	if(arg == "--output") {
 		options.output_path = next_arg();
-		std::cerr << "options.output_path = " << options.output_path << std::endl;
 		return;
 	}
 
