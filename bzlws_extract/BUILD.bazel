@@ -1,0 +1,13 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//internal:copts.bzl", "copts")
+
+cc_library(
+    name = "bzlws_extract",
+    srcs = ["bzlws_extract.cc"],
+    hdrs = ["bzlws_extract.hh"],
+    copts = copts,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//bzlws_tool_lib",
+    ],
+)

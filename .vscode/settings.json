@@ -1,0 +1,8 @@
+{
+	"editor.insertSpaces": false,
+	"files.insertFinalNewline": true,
+	"[starlark]": {
+		"editor.formatOnSave": true,
+		"editor.defaultFormatter": "BazelBuild.vscode-bazel"
+	}
+}

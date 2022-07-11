@@ -6,8 +6,8 @@ _sh_binary_suffix = "__bzlws_generator_output"
 def _get_full_label_string(label):
     if not label:
         return "@"
-    
-    return "@" + label.workspace_name + "//" + label.package + ":" + label.name 
+
+    return "@" + label.workspace_name + "//" + label.package + ":" + label.name
 
 def _get_file_path(ctx, file):
     if file.path.startswith("external/"):
@@ -48,10 +48,11 @@ def _bzlws_tool_shell_script_src_impl(ctx):
 
     ctx.actions.write(
         output = params_file,
-        content = args
+        content = args,
     )
 
     action_args = ctx.actions.args()
+
     # needs to be added well before srcs because the underlying tool uses this
     # option to parse other options
     action_args.add("--output", ctx.attr.out)
@@ -92,12 +93,11 @@ _bzlws_tool_shell_script_src = rule(
             default = "@bzlws//generators/cpp",
             executable = True,
             cfg = "exec",
-        )
+        ),
     },
 )
 
 def _validate_required_attrs(rule_name, name, srcs, out):
-    
     if not name:
         fail("{} - missing name attribute".format(rule_name))
 
@@ -193,7 +193,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         tool = "bzlws_copy",
         visibility = ["//visibility:private"],
         tags = tags,
-        **kwargs,
+        **kwargs
     )
 
     cc_binary(
@@ -208,7 +208,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
 def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", visibility = None, **kwargs):
     """ Symlink generated files into workspace directory
-    
+
     ```python
     load("@bzlws//:index.bzl", "bzlws_link")
     ```
@@ -275,13 +275,38 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
         metafile_path = metafile_path,
         tool = "bzlws_link",
         visibility = ["//visibility:private"],
-        **kwargs,
+        **kwargs
     )
 
     cc_binary(
         name = name,
         srcs = [":" + sh_script_name],
         deps = ["@bzlws//bzlws_link"],
+        data = srcs,
+        visibility = visibility,
+        **kwargs
+    )
+
+def bzlws_extract(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", visibility = None, **kwargs):
+    _validate_required_attrs("bzlws_extract", name, srcs, out)
+
+    sh_script_name = name + _sh_binary_suffix
+    _bzlws_tool_shell_script_src(
+        name = sh_script_name,
+        srcs = srcs,
+        out = out,
+        strip_filepath_prefix = strip_filepath_prefix,
+        force = force,
+        metafile_path = metafile_path,
+        tool = "bzlws_extract",
+        visibility = ["//visibility:private"],
+        **kwargs
+    )
+
+    cc_binary(
+        name = name,
+        srcs = [":" + sh_script_name],
+        deps = ["@bzlws//bzlws_extract"],
         data = srcs,
         visibility = visibility,
         **kwargs

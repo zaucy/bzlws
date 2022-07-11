@@ -56,7 +56,6 @@ namespace {
 	}
 }
 
-
 bool bzlws_tool_lib::force_remove
 	( const fs::path& path
 	, std::error_code& ec
@@ -218,10 +217,6 @@ fs::path bzlws_tool_lib::get_src_out_path
 		src_path.filename().replace_extension().string());
 
 	fs::path out_path = workspace_dir / out_dir_input;
-	if(fs::is_directory(out_path)) {
-		out_path = out_path / src_path.filename();
-	}
-
 	fs::path out_dir = fs::path(out_path).remove_filename();
 
 	if(!fs::exists(out_dir)) {
