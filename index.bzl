@@ -1,4 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("//bazel:copts.bzl", _copts = "copts")
 load("//internal:bzlws_info.bzl", "BzlwsInfo")
 
 _sh_binary_suffix = "__bzlws_generator_output"
@@ -200,6 +201,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         name = name,
         srcs = [":" + sh_script_name],
         deps = ["@bzlws//bzlws_copy"],
+        copts = _copts,
         data = srcs,
         visibility = visibility,
         tags = tags + ["ibazel_notify_changes"],
@@ -283,6 +285,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
         srcs = [":" + sh_script_name],
         deps = ["@bzlws//bzlws_link"],
         data = srcs,
+        copts = _copts,
         visibility = visibility,
         **kwargs
     )
@@ -308,6 +311,7 @@ def bzlws_extract(name = None, srcs = None, out = None, force = None, strip_file
         srcs = [":" + sh_script_name],
         deps = ["@bzlws//bzlws_extract"],
         data = srcs,
+        copts = _copts,
         visibility = visibility,
         **kwargs
     )

@@ -1,9 +1,9 @@
 load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("//internal:copts.bzl", "copts")
+load("//bazel:copts.bzl", "copts")
 
 cc_binary(
     name = "bash",
-    visibility = ["//visibility:public"],
-    copts = copts,
     srcs = ["bash_generator.cc"],
+    copts = copts,
+    visibility = ["//visibility:public"],
 )

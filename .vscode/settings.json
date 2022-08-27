@@ -4,5 +4,6 @@
 	"[starlark]": {
 		"editor.formatOnSave": true,
 		"editor.defaultFormatter": "BazelBuild.vscode-bazel"
-	}
+	},
+	"C_Cpp.default.compileCommands": "${workspaceFolder}/compile_commands.json"
 }

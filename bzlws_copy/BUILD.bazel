@@ -1,12 +1,12 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("//internal:copts.bzl", "copts")
+load("//bazel:copts.bzl", "copts")
 
 cc_library(
     name = "bzlws_copy",
-    visibility = ["//visibility:public"],
-    copts = copts,
-    hdrs = ["bzlws_copy.hh"],
     srcs = ["bzlws_copy.cc"],
+    hdrs = ["bzlws_copy.hh"],
+    copts = copts,
+    visibility = ["//visibility:public"],
     deps = [
         "//bzlws_tool_lib",
     ],
