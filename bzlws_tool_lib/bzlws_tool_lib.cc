@@ -189,7 +189,7 @@ fs::path bzlws_tool_lib::get_src_out_path
 
 	auto ext_str = src_path.extension().string();
 	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
-	auto filepath = fs::relative(src_path).generic_string();
+	auto filepath = fs::relative(src_path, workspace_dir).generic_string();
 	while(filepath.find("../") != std::string::npos) {
 		substr_str(filepath, "../", "");
 	}
