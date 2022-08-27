@@ -154,7 +154,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
             `{FILENAME}` - Full file name with extension
 
-            `{FILEPATH}` - Fulle file path. Any relative paths are stripped
+            `{FILEPATH}` - Full file path. Any relative paths are stripped
 
             `{BASENAME}` - Path basename
 
