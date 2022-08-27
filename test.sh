@@ -8,8 +8,11 @@ function test_path_or_exit {
 	fi
 }
 
-bazel run //example:copy_example_txt
+git clean -fx example
+bazel build //example/...
+
+bazel run --config=test //example:copy_example_txt
 test_path_or_exit ./example/ignored_folder/example.txt
 
-bazel run //example:copy_example_txt_file_path
+bazel run --config=test //example:copy_example_txt_file_path
 test_path_or_exit ./example/ignored_folder/example/example.txt

@@ -12,5 +12,7 @@ build:linux --extra_toolchains=@llvm_toolchain//:cc-toolchain-x86_64-linux
 
 common:ci --announce_rc
 common:ci --disk_cache=~/.cache/bazel-disk-cache
+run:test --ui_event_filters=-info,-stdout,-stderr
+run:test --noshow_progress
 
 try-import %workspace%/user.bazelrc
