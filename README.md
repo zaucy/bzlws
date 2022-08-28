@@ -18,6 +18,12 @@ load("@bzlws//:repo.bzl", "bzlws_deps")
 bzlws_deps()
 ```
 
+On windows runfiles aren't enabled by default. `bzlws` needs runfiles in order to work. Enable them by adding this to your `.bazelrc`:
+
+```bazelrc
+build --enable_runfiles
+```
+
 See [Documentation](docs/index.md) for usage
 
 ## License

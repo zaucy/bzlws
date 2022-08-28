@@ -10,12 +10,6 @@ def _get_full_label_string(label):
 
     return "@" + label.workspace_name + "//" + label.package + ":" + label.name
 
-def _get_file_path(ctx, file):
-    if file.path.startswith("external/"):
-        return file.path[len("external/"):]
-
-    return file.path
-
 def _bzlws_tool_shell_script_src_impl(ctx):
     name = ctx.attr.name
     src_filename = name[:-len(_sh_binary_suffix)] + ".cc"
@@ -41,9 +35,8 @@ def _bzlws_tool_shell_script_src_impl(ctx):
 
     for src_file in ctx.files.srcs:
         src_label_str = _get_full_label_string(src_file.owner)
-        src_file_path = _get_file_path(ctx, src_file)
         args.add(src_label_str)
-        args.add(src_file_path)
+        args.add(src_file.short_path)
 
     params_file = ctx.actions.declare_file(ctx.attr.name + ".params")
 
@@ -152,9 +145,9 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
             `{EXTNAME}` - File extension name (without the dot)
 
-            `{FILENAME}` - Full file name with extension
+            `{FILENAME}` - File name with extension
 
-            `{FILEPATH}` - Full file path. Any relative paths are stripped
+            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#short_path
 
             `{BASENAME}` - Path basename
 
@@ -249,9 +242,9 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
 
             `{EXTNAME}` - File extension name (without the dot)
 
-            `{FILENAME}` - Full file name with extension
+            `{FILENAME}` - File name with extension
 
-            `{FILEPATH}` - Fulle file path. Any relative paths are stripped
+            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#short_path
 
             `{BASENAME}` - Path basename
 
