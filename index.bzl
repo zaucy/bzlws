@@ -10,12 +10,6 @@ def _get_full_label_string(label):
 
     return "@" + label.workspace_name + "//" + label.package + ":" + label.name
 
-def _get_file_path(ctx, file):
-    if file.path.startswith("external/"):
-        return file.path[len("external/"):]
-
-    return file.path
-
 def _bzlws_tool_shell_script_src_impl(ctx):
     name = ctx.attr.name
     src_filename = name[:-len(_sh_binary_suffix)] + ".cc"
@@ -41,9 +35,8 @@ def _bzlws_tool_shell_script_src_impl(ctx):
 
     for src_file in ctx.files.srcs:
         src_label_str = _get_full_label_string(src_file.owner)
-        src_file_path = _get_file_path(ctx, src_file)
         args.add(src_label_str)
-        args.add(src_file_path)
+        args.add(src_file.path)
 
     params_file = ctx.actions.declare_file(ctx.attr.name + ".params")
 

@@ -189,7 +189,10 @@ fs::path bzlws_tool_lib::get_src_out_path
 
 	auto ext_str = src_path.extension().string();
 	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
-	auto filepath = fs::relative(src_path, workspace_dir).generic_string();
+	auto filepath = fs::relative(src_path).generic_string();
+	std::cout << "current_path=" << fs::current_path() << "\n";
+	std::cout << "src_path=" << filepath << "\n";
+	std::cout << "filepath=" << filepath << "\n";
 	while(filepath.find("../") != std::string::npos) {
 		substr_str(filepath, "../", "");
 	}
@@ -285,11 +288,6 @@ static void parse_arg
 	if(!fs::exists(src_path)) {
 		// If the file doesn't exist from our current directory check the runfiles
 		src_path = runfiles.Rlocation(potential_src_path);
-	}
-
-	if(src_path.empty() || !fs::exists(src_path)) {
-		// If we still cannot find the file try from the workspace directory
-		src_path = (workspace_dir / potential_src_path).make_preferred().string();
 	}
 
 	if(src_path.empty() || !fs::exists(src_path)) {
