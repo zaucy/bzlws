@@ -279,10 +279,14 @@ static void parse_arg
 	const std::string potential_src_path = next_arg();
 	std::string src_path = potential_src_path;
 
+	std::cout << src_path << "\n";
+
 	if(!fs::exists(src_path)) {
 		// If the file doesn't exist from our current directory check the runfiles
 		src_path = runfiles.Rlocation(potential_src_path);
+		std::cout << src_path << "\n";
 	}
+	std::cout << "\n";
 
 	if(src_path.empty() || !fs::exists(src_path)) {
 		std::cerr
