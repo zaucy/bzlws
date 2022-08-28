@@ -1,4 +1,3 @@
-startup --windows_enable_symlinks
 build --enable_platform_specific_config
 build --incompatible_use_platforms_repo_for_constraints
 build --incompatible_enable_cc_toolchain_resolution
