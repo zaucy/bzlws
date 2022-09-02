@@ -36,7 +36,7 @@ def _bzlws_tool_shell_script_src_impl(ctx):
     for src_file in ctx.files.srcs:
         src_label_str = _get_full_label_string(src_file.owner)
         args.add(src_label_str)
-        args.add(src_file.short_path)
+        args.add(src_file.path)
 
     params_file = ctx.actions.declare_file(ctx.attr.name + ".params")
 
@@ -147,7 +147,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
             `{FILENAME}` - File name with extension
 
-            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#short_path
+            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#path
 
             `{BASENAME}` - Path basename
 
@@ -244,7 +244,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
 
             `{FILENAME}` - File name with extension
 
-            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#short_path
+            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#path
 
             `{BASENAME}` - Path basename
 

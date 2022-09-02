@@ -13,6 +13,13 @@ bzlws_copy(
     force = True,
 )
 
+bzlws_copy(
+    name = "copy_example_txt_file_path_external",
+    srcs = ["@faux_repo//:example.txt"],
+    out = "example/ignored_folder/{FILEPATH}",
+    force = True,
+)
+
 bzlws_link(
     name = "link_example_txt",
     srcs = ["example.txt"],
