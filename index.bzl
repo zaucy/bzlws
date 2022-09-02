@@ -147,7 +147,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
             `{FILENAME}` - File name with extension
 
-            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#short_path
+            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#path
 
             `{BASENAME}` - Path basename
 
@@ -244,7 +244,7 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
 
             `{FILENAME}` - File name with extension
 
-            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#short_path
+            `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#path
 
             `{BASENAME}` - Path basename
 
