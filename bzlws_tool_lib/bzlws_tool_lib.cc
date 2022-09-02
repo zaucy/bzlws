@@ -285,6 +285,10 @@ static void parse_arg
 	}
 
 	if(src_path.empty() || !fs::exists(src_path)) {
+		src_path = (workspace_dir / potential_src_path).generic_string();
+	}
+
+	if(src_path.empty() || !fs::exists(src_path)) {
 		std::cerr
 			<< "Source path does not exist: "
 			<< potential_src_path << std::endl;
