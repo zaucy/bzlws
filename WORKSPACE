@@ -10,6 +10,10 @@ http_archive(
     url = "https://github.com/jbeder/yaml-cpp/archive/27d8a0e302c26153b1611c65f4c233ef5db0ba32.zip",
 )
 
+load("//:faux_repo.bzl", "faux_repo")
+
+faux_repo(name = "faux_repo")
+
 git_repository(
     name = "io_bazel_stardoc",
     commit = "8275ced1b6952f5ad17ec579a5dd16e102479b72",

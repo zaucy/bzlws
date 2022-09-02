@@ -17,3 +17,6 @@ Test-Path-Or-Exit .\example\ignored_folder\example.txt
 
 bazel run --config=test //example:copy_example_txt_file_path
 Test-Path-Or-Exit .\example\ignored_folder\example\example.txt
+
+bazel run --config=test //example:copy_example_txt_file_path_external
+Test-Path-Or-Exit .\example\ignored_folder\external\faux_repo\example.txt
