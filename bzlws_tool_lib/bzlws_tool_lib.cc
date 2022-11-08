@@ -192,6 +192,14 @@ fs::path bzlws_tool_lib::get_src_out_path
 	auto filepath = src_path.generic_string();
 
 	if(!strip_filepath_prefix.empty()) {
+		substr_str(strip_filepath_prefix, "{BAZEL_LABEL_NAME}", label.name);
+		substr_str(strip_filepath_prefix, "{BAZEL_LABEL_PACKAGE}", label.package);
+		substr_str(strip_filepath_prefix, "{BAZEL_LABEL_WORKSPACE_NAME}",
+			label.workspace_name);
+		substr_str(strip_filepath_prefix, "{BAZEL_FULL_LABEL}",
+			label.workspace_name + "/" + label.package + "/" + label.name);
+		substr_str(strip_filepath_prefix, "{BAZEL_LABEL}", label.package + "/" + label.name);
+
 		if(filepath.rfind(strip_filepath_prefix, 0) == 0) {
 			filepath = filepath.substr(strip_filepath_prefix.length());
 		}
@@ -386,6 +394,9 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 						<< "Argv access out of range at index " << i
 						<< " (improperly formated) " << std::endl;
 					tool_exit(exit_code::invalid_arguments);
+				}
+				if(next_line.starts_with('\'') && next_line.ends_with('\'')) {
+					next_line = next_line.substr(1, next_line.size() - 2);
 				}
 
 				return next_line;
