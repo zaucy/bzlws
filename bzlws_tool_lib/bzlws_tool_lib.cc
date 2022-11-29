@@ -7,6 +7,7 @@
 #include <sstream>
 #include <cstring>
 #include <string>
+#include <iostream>
 #include <yaml-cpp/yaml.h>
 #include "tools/cpp/runfiles/runfiles.h"
 
@@ -162,6 +163,29 @@ bazelignore_parse_results bzlws_tool_lib::parse_bazelignore
 	return results;
 }
 
+std::string python_like_slice(std::string value, const std::string& slice) {
+	auto colon_count = std::count_if(
+		slice.begin(),
+		slice.end(),
+		[](char c) { return c == ':'; }
+	);
+
+	if(colon_count > 1 || slice[0] != ':') {
+		throw std::invalid_argument(
+			"bzlws slice syntax is very limited right now. only [:start] is allows"
+		);
+	}
+
+	auto offset = std::stoi(slice.substr(1));
+	if(offset < 0) {
+		value = value.substr(0, value.length() + offset);
+	} else {
+		value = value.substr(offset);
+	}
+
+	return value;
+}
+
 void bzlws_tool_lib::substr_str
 	( std::string&        str
 	, const char*         subst_id
@@ -171,7 +195,25 @@ void bzlws_tool_lib::substr_str
 	const auto subst_id_len = strlen(subst_id);
 	auto substr_id_idx = str.find(subst_id);
 	while(substr_id_idx != std::string::npos) {
-		str.replace(substr_id_idx, subst_id_len, subst_value);
+		auto slice_start_idx = substr_id_idx + subst_id_len;
+		if(str.size() > slice_start_idx && str[slice_start_idx] == '[') {
+			auto slice_end_idx = str.find(']', slice_start_idx);
+			if(slice_end_idx == std::string::npos) {
+				throw std::invalid_argument("Expected ']' after '[' in slice");
+			}
+
+			auto slice = str.substr(
+				slice_start_idx + 1,
+				slice_end_idx - slice_start_idx - 1
+			);
+			auto sliced_subst_value = python_like_slice(subst_value, slice);
+			
+			str.replace(slice_start_idx, slice_end_idx - slice_start_idx + 1, "");
+			str.replace(substr_id_idx, subst_id_len, sliced_subst_value);
+		} else {
+			str.replace(substr_id_idx, subst_id_len, subst_value);
+		}
+
 		substr_id_idx = str.find(subst_id);
 	}
 }
