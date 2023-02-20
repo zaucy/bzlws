@@ -68,7 +68,7 @@ def _bzlws_tool_shell_script_src_impl(ctx):
 _bzlws_tool_shell_script_src = rule(
     implementation = _bzlws_tool_shell_script_src_impl,
     attrs = {
-        "srcs": attr.label_list(mandatory = True, allow_files = True),
+        "srcs": attr.label_list(mandatory = True, allow_files = True, allow_empty = False),
         "out": attr.string(mandatory = True),
         "tool": attr.string(mandatory = True),
         "force": attr.bool(default = False),
@@ -95,8 +95,8 @@ def _validate_required_attrs(rule_name, name, srcs, out):
     if not name:
         fail("{} - missing name attribute".format(rule_name))
 
-    if not srcs or len(srcs) == 0:
-        fail("{} - missing srcs attribute or is empty".format(rule_name))
+    if not srcs:
+        fail("{} - missing srcs attribute".format(rule_name))
 
     if not out:
         fail("{} - missing out attribute".format(rule_name))
