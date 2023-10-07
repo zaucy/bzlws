@@ -15,4 +15,7 @@ common:ci --announce_rc
 common:ci --disk_cache=~/.cache/bazel-disk-cache
 build:ci -c opt
 
+run:test --ui_event_filters=-info,-stdout,-stderr
+run:test --noshow_progress
+
 try-import %workspace%/user.bazelrc
