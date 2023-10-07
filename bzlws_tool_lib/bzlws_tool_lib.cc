@@ -395,7 +395,7 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 
 	std::string cmd;
 	std::string error;
-	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(arv0, &error));
+	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(arv0, BAZEL_CURRENT_REPOSITORY,  &error));
 	if(!error.empty()) {
 		std::cerr
 			<< "[[RUNFILES ERROR]]" << std::endl

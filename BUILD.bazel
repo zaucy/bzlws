@@ -1,4 +1,4 @@
-load("@io_bazel_stardoc//stardoc:stardoc.bzl", "stardoc")
+load("@stardoc//stardoc:stardoc.bzl", "stardoc")
 load("@bzlws//:index.bzl", "bzlws_copy")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
@@ -8,6 +8,7 @@ exports_files(["index.bzl", "repo.bzl"])
 
 stardoc(
     name = "docs",
+    tags = ["manual"],
     input = "index.bzl",
     out = "index.md",
     deps = [":rules_cc"],
@@ -16,6 +17,7 @@ stardoc(
 # SEE: https://github.com/bazelbuild/stardoc/issues/92
 bzl_library(
     name = "rules_cc",
+    tags = ["manual"],
     srcs = [
         "@rules_cc//cc:action_names.bzl",
         "@rules_cc//cc:defs.bzl",
@@ -30,6 +32,7 @@ bzl_library(
 bzlws_copy(
     name = "docs_copy",
     out = "docs/{FILENAME}",
+    tags = ["manual"],
     force = True,
     srcs = [
         ":docs",

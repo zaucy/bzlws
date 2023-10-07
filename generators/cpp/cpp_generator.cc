@@ -28,7 +28,7 @@ std::filesystem::path get_build_workspace_dir() {
 int main(int argc, char* argv[]) {
 	std::string cmd;
 	std::string error;
-	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], &error));
+	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
 	if(!error.empty()) {
 		std::cerr << error << std::endl;
 		std::exit(1);

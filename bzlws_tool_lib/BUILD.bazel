@@ -9,6 +9,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@bazel_tools//tools/cpp/runfiles",
-        "@com_github_jbeder_yaml_cpp//:yaml-cpp",
+        "@yaml-cpp",
     ],
 )
