@@ -4,15 +4,8 @@ module(
     compatibility_level = 1,
 )
 
-bazel_dep(name = "bazel_skylib", version = "1.4.2")
+bazel_dep(name = "bazel_skylib", version = "1.6.1")
 bazel_dep(name = "rules_cc", version = "0.0.9")
+bazel_dep(name = "yaml-cpp", version = "0.8.0")
+
 bazel_dep(name = "stardoc", version = "0.6.2", dev_dependency = True)
-
-# https://github.com/jbeder/yaml-cpp/issues/1229
-bazel_dep(name = "yaml-cpp")
-
-git_override(
-    module_name = "yaml-cpp",
-    commit = "37f1b8b8c9e5172ff3a79a3d5fdbb87f2994842b",
-    remote = "https://github.com/jbeder/yaml-cpp",
-)
