@@ -9,7 +9,7 @@ function Test-Path-Or-Exit($Path) {
 	}
 }
 
-git clean -fx .
+git clean -fx . -e test/bazel-*
 bazel build //...
 
 bazel run --config=test //:copy_example_txt
@@ -21,7 +21,7 @@ Test-Path-Or-Exit .\ignored_folder\example\example.txt
 bazel run --config=test //:copy_example_txt_file_path_external
 Test-Path-Or-Exit .\ignored_folder\external\faux_repo\example.txt
 
-git clean -fx .
+git clean -fx . -e test/bazel-*
 
 bazel run --config=test --config=ci //:copy_example_txt_file_path_external
 Test-Path-Or-Exit .\\ignored_folder\external\faux_repo\example.txt

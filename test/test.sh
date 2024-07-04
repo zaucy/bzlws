@@ -8,19 +8,19 @@ function test_path_or_exit {
 	fi
 }
 
-git clean -fx example
-bazel build //example/...
+git clean -fx . -e test/bazel-*
+bazel build //...
 
-bazel run --config=test //example:copy_example_txt
-test_path_or_exit ./example/ignored_folder/example.txt
+bazel run --config=test //:copy_example_txt
+test_path_or_exit ./ignored_folder/example.txt
 
-bazel run --config=test //example:copy_example_txt_file_path
-test_path_or_exit ./example/ignored_folder/example/example.txt
+bazel run --config=test //:copy_example_txt_file_path
+test_path_or_exit ./ignored_folder/example/example.txt
 
-bazel run --config=test //example:copy_example_txt_file_path
-test_path_or_exit ./example/ignored_folder/external/faux_repo/example.txt
+bazel run --config=test //:copy_example_txt_file_path
+test_path_or_exit ./ignored_folder/external/faux_repo/example.txt
 
-git clean -fx example
+git clean -fx . -e test/bazel-*
 
-bazel run --config=test --config=ci //example:copy_example_txt_file_path_external
-test_path_or_exit ./example/ignored_folder/external/faux_repo/example.txt
+bazel run --config=test --config=ci //:copy_example_txt_file_path_external
+test_path_or_exit ./ignored_folder/external/faux_repo/example.txt
