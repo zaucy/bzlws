@@ -1,0 +1,17 @@
+startup --windows_enable_symlinks
+common --enable_bzlmod
+build --enable_platform_specific_config
+build --incompatible_enable_cc_toolchain_resolution
+build --incompatible_strict_action_env
+build --enable_runfiles
+build --noincompatible_remove_rule_name_parameter
+query --noincompatible_remove_rule_name_parameter
+
+common:ci --announce_rc
+common:ci --disk_cache=~/.cache/bazel-disk-cache
+build:ci -c opt
+
+run:test --ui_event_filters=-info,-stdout,-stderr
+run:test --noshow_progress
+
+try-import %workspace%/user.bazelrc
