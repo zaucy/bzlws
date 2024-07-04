@@ -4,57 +4,57 @@ load("@bzlws//rules:bzlws_link.bzl", "bzlws_link")
 bzlws_copy(
     name = "copy_example_txt",
     srcs = ["example.txt"],
-    out = "example/ignored_folder/{FILENAME}",
+    out = "ignored_folder/{FILENAME}",
 )
 
 bzlws_copy(
     name = "copy_example_txt_file_path",
     srcs = ["example.txt"],
-    out = "example/ignored_folder/{FILEPATH}",
+    out = "ignored_folder/{FILEPATH}",
     force = True,
 )
 
 bzlws_copy(
     name = "copy_example_txt_file_path_external",
     srcs = ["@faux_repo//:example.txt"],
-    out = "example/ignored_folder/{FILEPATH}",
+    out = "ignored_folder/{FILEPATH}",
     force = True,
 )
 
 bzlws_link(
     name = "link_example_txt",
     srcs = ["example.txt"],
-    out = "example/ignored_folder/{FILENAME}",
+    out = "ignored_folder/{FILENAME}",
 )
 
 bzlws_copy(
     name = "copy_error_example_txt",
     srcs = ["example.txt"],
-    out = "example/folder/{FILENAME}",
+    out = "folder/{FILENAME}",
 )
 
 bzlws_copy(
     name = "link_error_example_txt",
     srcs = ["example.txt"],
-    out = "example/folder/{FILENAME}",
+    out = "folder/{FILENAME}",
 )
 
 bzlws_copy(
     name = "path_substitutions_example1",
     srcs = ["example.txt"],
-    out = "example/ignored_folder/__{BASENAME}__{EXT}",
+    out = "ignored_folder/__{BASENAME}__{EXT}",
 )
 
 bzlws_copy(
     name = "path_substitutions_example2",
     srcs = ["example.txt"],
-    out = "example/ignored_folder/{EXTNAME}__{FILENAME}",
+    out = "ignored_folder/{EXTNAME}__{FILENAME}",
 )
 
 bzlws_copy(
     name = "substitutions_example1",
     srcs = ["subst_example.txt"],
-    out = "example/ignored_folder/{FILENAME}",
+    out = "ignored_folder/{FILENAME}",
     substitutions = {
         "@bzlws//info:execution_root": "__EXEC_ROOT__",
         "@bzlws//info:release": "__BAZEL_RELEASE__",

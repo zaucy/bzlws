@@ -1,4 +1,4 @@
-load("//internal:bzlws_info.bzl", "bzlws_info")
+load("//rules/private:bzlws_info.bzl", "bzlws_info")
 package(default_visibility = ["//visibility:public"])
 
 bzlws_info(name = "bazel-bin")

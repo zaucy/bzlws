@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
 	out
 		<< "#include <string>\n"
 		<< "#include <vector>\n"
-		<< "#include \"" << tool << "/" << tool << ".hh\"\n"
+		<< "#include \"tools/" << tool << "/" << tool << ".hh\"\n"
 		<< "int main(int argc, char* argv[]) {\n"
 		<< "\tstd::vector<std::string> args;\n";
 

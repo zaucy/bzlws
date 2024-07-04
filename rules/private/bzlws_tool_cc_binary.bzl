@@ -1,10 +1,11 @@
-load(":bzlws_info.bzl", "BzlwsInfo")
+load("@bzlws//rules/private:bzlws_info.bzl", "BzlwsInfo")
+load("@bzlws//rules/private:bzlws_util.bzl", "bzlws_get_full_label_string")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
-bzlws_sh_binary_suffix = "__bzlws_generator_output"
-
-def _bzlws_tool_shell_script_src(ctx):
+def _bzlws_tool_cc_binary(ctx):
     name = ctx.attr.name
-    src_filename = name[:-len(bzlws_sh_binary_suffix)] + ".cc"
+    src_filename = name + ".bzlws__tool.cc"
     src = ctx.actions.declare_file(src_filename)
     args = ctx.actions.args()
 
@@ -26,7 +27,7 @@ def _bzlws_tool_shell_script_src(ctx):
         args.add_all(["--stamp_subst", key, value])
 
     for src_file in ctx.files.srcs:
-        src_label_str = _get_full_label_string(src_file.owner)
+        src_label_str = bzlws_get_full_label_string(src_file.owner)
         args.add(src_label_str)
         args.add(src_file.path)
 
@@ -51,19 +52,64 @@ def _bzlws_tool_shell_script_src(ctx):
     ctx.actions.run(
         outputs = [src],
         inputs = ctx.files.srcs + [params_file],
-        executable = ctx.executable.generator,
+        executable = ctx.executable._generator,
         arguments = [action_args],
     )
 
-    return DefaultInfo(files = depset([src, params_file]))
+    cc_toolchain = find_cc_toolchain(ctx)
+    feature_configuration = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+    )
+    variables = cc_common.create_link_variables(
+        cc_toolchain = cc_toolchain,
+        feature_configuration = feature_configuration,
+    )
+    env = cc_common.get_environment_variables(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.cpp_link_dynamic_library,
+        variables = variables,
+    )
 
-bzlws_tool_shell_script_src = rule(
-    implementation = _bzlws_tool_shell_script_src,
+    compilation_contexts = []
+    for dep in ctx.attr.deps:
+        compilation_contexts.append(dep[CcInfo].compilation_context)
+
+    (compilation_context, compilation_output) = cc_common.compile(
+        name = ctx.attr.name,
+        actions = ctx.actions,
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        srcs = [src],
+        compilation_contexts = compilation_contexts,
+    )
+
+    linking_contexts = []
+    for dep in ctx.attr.deps:
+        linking_contexts.append(dep[CcInfo].linking_context)
+
+    output = cc_common.link(
+        actions = ctx.actions,
+        name = ctx.attr.name,
+        feature_configuration = feature_configuration,
+        cc_toolchain = cc_toolchain,
+        compilation_outputs = compilation_output,
+        linking_contexts = linking_contexts,
+    )
+
+    return DefaultInfo(
+        files = depset([output.executable]),
+        executable = output.executable,
+    )
+
+bzlws_tool_cc_binary = rule(
+    implementation = _bzlws_tool_cc_binary,
     attrs = {
         "srcs": attr.label_list(mandatory = True, allow_files = True, allow_empty = False),
         "out": attr.string(mandatory = True),
         "tool": attr.string(mandatory = True),
         "force": attr.bool(default = False),
+        "deps": attr.label_list(providers = [CcInfo], allow_empty = True),
         "strip_filepath_prefix": attr.string(default = "", mandatory = False),
         "metafile_path": attr.string(default = "", mandatory = False),
         "substitutions": attr.label_keyed_string_dict(
@@ -75,10 +121,13 @@ bzlws_tool_shell_script_src = rule(
             default = {},
             mandatory = False,
         ),
-        "generator": attr.label(
-            default = "@bzlws//generators/cpp",
+        "_generator": attr.label(
+            default = "@bzlws//tools/generators/cpp",
             executable = True,
             cfg = "exec",
         ),
     },
+    toolchains = use_cc_toolchain(),
+    fragments = ["cpp"],
+    executable = True,
 )

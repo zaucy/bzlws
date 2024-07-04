@@ -5,7 +5,7 @@
 #include <iostream>
 #include <exception>
 #include <filesystem>
-#include "bzlws_tool_lib/bzlws_tool_lib.hh"
+#include "tools/bzlws_tool_lib/bzlws_tool_lib.hh"
 
 namespace fs = std::filesystem;
 

@@ -1,4 +1,4 @@
-#include "bzlws_tool_lib/bzlws_tool_lib.hh"
+#include "tools/bzlws_tool_lib/bzlws_tool_lib.hh"
 
 int bzlws_link
 	( const char*                      argv0

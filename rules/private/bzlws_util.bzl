@@ -1,4 +1,4 @@
-def get_full_label_string(label):
+def bzlws_get_full_label_string(label):
     if not label:
         return "@"
 

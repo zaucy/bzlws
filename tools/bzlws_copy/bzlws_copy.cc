@@ -2,7 +2,7 @@
 #include <string>
 #include <iostream>
 #include <exception>
-#include "bzlws_tool_lib/bzlws_tool_lib.hh"
+#include "tools/bzlws_tool_lib/bzlws_tool_lib.hh"
 
 static void copy_files
 	( const std::filesystem::path&    workspace_dir
