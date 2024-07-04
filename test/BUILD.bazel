@@ -1,4 +1,5 @@
-load("@bzlws//:index.bzl", "bzlws_copy", "bzlws_link")
+load("@bzlws//rules:bzlws_copy.bzl", "bzlws_copy")
+load("@bzlws//rules:bzlws_link.bzl", "bzlws_link")
 
 bzlws_copy(
     name = "copy_example_txt",
