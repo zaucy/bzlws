@@ -20,5 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - run: sudo chmod +x ./test/test.sh
       - run: ./test.sh
         working-directory: test
