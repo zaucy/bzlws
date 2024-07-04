@@ -1,0 +1,4 @@
+load("//:faux_repo.bzl", "faux_repo")
+
+faux_repo(name = "faux_repo")
+

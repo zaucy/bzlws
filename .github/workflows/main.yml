@@ -13,22 +13,12 @@ jobs:
   test-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/cache@v3
-        with:
-          path: |
-            /Users/runneradmin/AppData/Local/bazelisk
-            /Users/runneradmin/.cache/bazel-disk-cache
-          key: ${{runner.os}}-bazel-cache
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: .\test.ps1
+        dir: test
   test-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/bazelisk
-            ~/.cache/bazel-disk-cache
-          key: ${{runner.os}}-bazel-cache
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: ./test.sh
+        dir: test
