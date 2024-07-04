@@ -3,5 +3,3 @@
 .git
 .gitignore
 docs
-external
-example/ignored_folder
