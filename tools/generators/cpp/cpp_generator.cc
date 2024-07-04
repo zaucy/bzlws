@@ -7,40 +7,6 @@
 #include <map>
 #include <set>
 
-namespace fs = std::filesystem;
-
-static const char SCRIPT_SRC_START[] = R"______(
-#include <cstdlib>
-#include <memory>
-#include <string>
-#include <iostream>
-#include <filesystem>
-
-#include "tools/cpp/runfiles/runfiles.h"
-using bazel::tools::cpp::runfiles::Runfiles;
-
-std::filesystem::path get_build_workspace_dir() {
-	return std::filesystem::path(
-		std::getenv("BUILD_WORKSPACE_DIRECTORY")
-	).make_preferred();
-}
-
-int main(int argc, char* argv[]) {
-	std::string cmd;
-	std::string error;
-	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(argv[0], BAZEL_CURRENT_REPOSITORY, &error));
-	if(!error.empty()) {
-		std::cerr << error << std::endl;
-		std::exit(1);
-	}
-)______";
-
-static const char SCRIPT_SRC_END[] = R"______(
-
-	return std::system(cmd.c_str());
-} // end of main
-)______";
-
 std::string escaped_string
 	( const std::string& str
 	)
@@ -87,7 +53,6 @@ static void substr_str
 }
 
 int main(int argc, char* argv[]) {
-	bool force = false;
 	std::string generated_script_path;
 	std::string tool;
 	std::vector<std::string> forwarded_args;
