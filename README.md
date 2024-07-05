@@ -4,18 +4,15 @@ Rules for manipulating your Bazel workspace
 
 ## Install
 
+Add to your `MODULE.bazel` file:
+
 ```python
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-http_archive(
+bazel_dep(name = "bzlws")
+git_override(
     name = "bzlws",
-    strip_prefix = "bzlws-f929e5380f441f50a77776d34a7df8cacdbdf986",
-    url = "https://github.com/zaucy/bzlws/archive/f929e5380f441f50a77776d34a7df8cacdbdf986.zip",
-    sha256 = "5bebb821b158b11d81dd25cf031b5b26bae97dbb02025df7d0e41a262b3a030b",
+    remote = "https://github.com/zaucy/bzlws.git",
+    commit = "80c1bb3227579e134cdb8bdcfc245581fbfcd566",
 )
-
-load("@bzlws//:repo.bzl", "bzlws_deps")
-bzlws_deps()
 ```
 
 On windows runfiles aren't enabled by default. `bzlws` needs runfiles in order to work. Enable them by adding this to your `.bazelrc`:
@@ -24,7 +21,7 @@ On windows runfiles aren't enabled by default. `bzlws` needs runfiles in order t
 build --enable_runfiles
 ```
 
-See [Documentation](docs/index.md) for usage
+See [Documentation](docs/README.md) for usage
 
 ## License
 
