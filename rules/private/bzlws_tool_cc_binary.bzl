@@ -1,7 +1,7 @@
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@bzlws//rules/private:bzlws_info.bzl", "BzlwsInfo")
 load("@bzlws//rules/private:bzlws_util.bzl", "bzlws_get_full_label_string")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
 def _bzlws_tool_cc_binary(ctx):
     name = ctx.attr.name
@@ -99,7 +99,7 @@ def _bzlws_tool_cc_binary(ctx):
 
     return DefaultInfo(
         files = depset([output.executable]),
-        default_runfiles = ctx.runfiles(ctx.files.srcs + [output.executable]),
+        default_runfiles = ctx.runfiles(ctx.files.srcs + [output.executable, params_file]),
         executable = output.executable,
     )
 
