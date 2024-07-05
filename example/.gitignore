@@ -1,3 +1,0 @@
-/bazel-*
-/ignored_folder/**/*
-!/ignored_folder/.gitkeep

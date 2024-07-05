@@ -1,0 +1,40 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@stardoc//stardoc:stardoc.bzl", "stardoc")
+
+package(default_visibility = ["//:__subpackages__"])
+
+bzl_library(
+    name = "rules_cc",
+    srcs = [
+        "@rules_cc//cc:action_names.bzl",
+        "@rules_cc//cc:defs.bzl",
+        "@rules_cc//cc:find_cc_toolchain.bzl",
+        "@rules_cc//cc/private/rules_impl:cc_flags_supplier.bzl",
+        "@rules_cc//cc/private/rules_impl:cc_flags_supplier_lib.bzl",
+        "@rules_cc//cc/private/rules_impl:compiler_flag.bzl",
+        "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    ],
+    visibility = ["//rules:__subpackages__"],
+)
+
+bzl_library(
+    name = "bzlws_info",
+    srcs = ["bzlws_info.bzl"],
+    deps = [
+    ],
+)
+
+bzl_library(
+    name = "bzlws_util",
+    srcs = ["bzlws_util.bzl"],
+    deps = [
+    ],
+)
+
+bzl_library(
+    name = "bzlws_tool_cc_binary",
+    srcs = ["bzlws_tool_cc_binary.bzl"],
+    deps = [
+        ":rules_cc",
+    ],
+)

@@ -1,9 +1,0 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
-load("//bazel:copts.bzl", "copts")
-
-cc_binary(
-    name = "cpp",
-    srcs = ["cpp_generator.cc"],
-    copts = copts,
-    visibility = ["//visibility:public"],
-)

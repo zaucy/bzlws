@@ -1,0 +1,4 @@
+bazel-*
+*.bazel.lock
+ignored_folder/**/*
+!ignored_folder/.gitkeep

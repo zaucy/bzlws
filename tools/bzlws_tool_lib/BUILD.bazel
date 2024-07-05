@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//tools:copts.bzl", "copts")
+
+cc_library(
+    name = "bzlws_tool_lib",
+    srcs = ["bzlws_tool_lib.cc"],
+    hdrs = ["bzlws_tool_lib.hh"],
+    copts = copts,
+    visibility = ["//visibility:public"],
+    deps = [
+        "@bazel_tools//tools/cpp/runfiles",
+        "@yaml-cpp",
+    ],
+)
