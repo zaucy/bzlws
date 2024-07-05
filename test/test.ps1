@@ -24,4 +24,4 @@ Test-Path-Or-Exit .\ignored_folder\external\faux_repo\example.txt
 git clean -fx . -e test/bazel-*
 
 bazel run --config=test --config=ci //:copy_example_txt_file_path_external
-Test-Path-Or-Exit .\\ignored_folder\external\faux_repo\example.txt
+Test-Path-Or-Exit .\ignored_folder\external\faux_repo\example.txt
