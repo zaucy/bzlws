@@ -421,7 +421,7 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 
 		if(arg == "--params_file") {
 			auto param_file = next_arg();
-			auto param_file_path fs::path{param_file};
+			auto param_file_path = fs::path{param_file};
 			if(!fs::exists(param_file_path)) {
 				param_file_path = workspace_dir / param_file_path;
 			}
