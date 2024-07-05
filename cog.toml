@@ -1,0 +1,11 @@
+pre_bump_hooks = [
+	"buildozer 'set version {{version}}' //MODULE.bazel:%module",
+	"bazel mod tidy",
+]
+
+post_bump_hooks = [
+	"git push",
+	"git push origin {{version}}",
+	"git archive {{version}} -o bzlws-{{version}}.tar.gz",
+	"gh release create {{version}} ./bzlws-{{version}}.tar.gz --generate-notes --latest -t {{version}} --verify-tag",
+]
