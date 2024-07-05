@@ -347,7 +347,7 @@ static void parse_arg
 
 	if(options.output_path.empty()) {
 		std::cerr
-			<< "[ERROR] --output flag must come before any non-flag arugments"
+			<< "[ERROR] --output flag must come before any non-flag arguments"
 			<< std::endl;
 		tool_exit(bzlws_tool_lib::exit_code::invalid_arguments);
 	}
@@ -410,7 +410,7 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 			if(i+1 > args.size()-1) {
 				std::cerr
 					<< "Argv access out of range at index " << i
-					<< " (improperly formated) " << std::endl;
+					<< " (improperly formatted) " << std::endl;
 				tool_exit(exit_code::invalid_arguments);
 			}
 
@@ -434,7 +434,7 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 				if(!std::getline(param_file_stream, next_line, '\n')) {
 					std::cerr
 						<< "Argv access out of range at index " << i
-						<< " (improperly formated) " << std::endl;
+						<< " (improperly formatted) " << std::endl;
 					tool_exit(exit_code::invalid_arguments);
 				}
 				if(next_line.starts_with('\'') && next_line.ends_with('\'')) {
