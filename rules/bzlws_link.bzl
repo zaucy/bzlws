@@ -4,10 +4,6 @@ load("//rules/private:bzlws_util.bzl", "bzlws_check_common_required_attrs")
 def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", visibility = None, **kwargs):
     """ Symlink generated files into workspace directory
 
-    ```python
-    load("@bzlws//:index.bzl", "bzlws_link")
-    ```
-
     Args:
         name: Name used for executable target
 

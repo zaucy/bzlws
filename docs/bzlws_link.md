@@ -14,11 +14,6 @@ bzlws_link(<a href="#bzlws_link-name">name</a>, <a href="#bzlws_link-srcs">srcs<
 
 Symlink generated files into workspace directory
 
-```python
-load("@bzlws//:index.bzl", "bzlws_link")
-```
-
-
 **PARAMETERS**
 
 
