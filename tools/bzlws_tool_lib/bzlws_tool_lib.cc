@@ -426,6 +426,9 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 				param_file_path = workspace_dir / param_file_path;
 			}
 			if(!fs::exists(param_file_path)) {
+				param_file_path = runfiles->Rlocation(param_file);
+			}
+			if(!fs::exists(param_file_path)) {
 				std::cerr
 					<< "[ERROR] Unable to read params file: " << param_file << std::endl;
 				tool_exit(exit_code::filesystem_error);
