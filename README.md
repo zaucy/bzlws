@@ -1,6 +1,6 @@
 # bzlws
 
-Rules for manipulating your Bazel workspace
+Rules for bringing bazel artifacts out of the [bazel output directories](https://bazel.build/remote/output-directories) and **into your workspace**.
 
 ## Install
 
