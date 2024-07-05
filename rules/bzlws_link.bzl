@@ -1,4 +1,3 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("//rules/private:bzlws_tool_cc_binary.bzl", "bzlws_tool_cc_binary")
 load("//rules/private:bzlws_util.bzl", "bzlws_check_common_required_attrs")
 

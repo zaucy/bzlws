@@ -1,0 +1,68 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@stardoc//stardoc:stardoc.bzl", "stardoc")
+
+bzl_library(
+    name = "bzlws_copy",
+    visibility = ["//visibility:public"],
+    srcs = [
+        "bzlws_copy.bzl",
+    ],
+    deps = [
+        "//rules/private:bzlws_info",
+        "//rules/private:bzlws_util",
+        "//rules/private:bzlws_tool_cc_binary",
+    ],
+)
+
+stardoc(
+    name = "bzlws_copy_doc",
+    visibility = ["//:__pkg__"],
+    input = "bzlws_copy.bzl",
+    out = "bzlws_copy.md",
+    symbol_names = ["bzlws_copy"],
+    deps = [":bzlws_copy"],
+)
+
+bzl_library(
+    name = "bzlws_link",
+    visibility = ["//visibility:public"],
+    srcs = [
+        "bzlws_link.bzl",
+    ],
+    deps = [
+        "//rules/private:bzlws_info",
+        "//rules/private:bzlws_util",
+        "//rules/private:bzlws_tool_cc_binary",
+    ],
+)
+
+stardoc(
+    name = "bzlws_link_doc",
+    visibility = ["//:__pkg__"],
+    input = "bzlws_link.bzl",
+    out = "bzlws_link.md",
+    symbol_names = ["bzlws_link"],
+    deps = [":bzlws_link"],
+)
+
+bzl_library(
+    name = "bzlws_extract",
+    visibility = ["//visibility:public"],
+    srcs = [
+        "bzlws_extract.bzl",
+    ],
+    deps = [
+        "//rules/private:bzlws_info",
+        "//rules/private:bzlws_util",
+        "//rules/private:bzlws_tool_cc_binary",
+    ],
+)
+
+stardoc(
+    name = "bzlws_extract_doc",
+    visibility = ["//:__pkg__"],
+    input = "bzlws_extract.bzl",
+    out = "bzlws_extract.md",
+    symbol_names = ["bzlws_extract"],
+    deps = [":bzlws_extract"],
+)

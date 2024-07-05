@@ -1,4 +1,3 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("//rules/private:bzlws_tool_cc_binary.bzl", "bzlws_tool_cc_binary")
 load("//rules/private:bzlws_util.bzl", "bzlws_check_common_required_attrs")
 
@@ -6,7 +5,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
     """Copy generated files into workspace directory
 
     ```python
-    load("@bzlws//:index.bzl", "bzlws_copy")
+    load("@bzlws//rules:bzlws_copy.bzl", "bzlws_copy")
     ```
 
     Args:
@@ -73,17 +72,17 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
     bzlws_check_common_required_attrs("bzlws_copy", name, srcs, out)
 
     bzlws_tool_cc_binary(
-         name = name,
-         srcs = srcs,
-         out = out,
-         strip_filepath_prefix = strip_filepath_prefix,
-         force = force,
-         metafile_path = metafile_path,
-         substitutions = substitutions,
-         stamp_substitutions = stamp_substitutions,
-         tool = "bzlws_copy",
-         deps = ["@bzlws//tools/bzlws_copy"],
-         visibility = ["//visibility:private"],
-         tags = tags + ["ibazel_notify_changes"],
-         **kwargs
+        name = name,
+        srcs = srcs,
+        out = out,
+        strip_filepath_prefix = strip_filepath_prefix,
+        force = force,
+        metafile_path = metafile_path,
+        substitutions = substitutions,
+        stamp_substitutions = stamp_substitutions,
+        tool = "bzlws_copy",
+        deps = ["@bzlws//tools/bzlws_copy"],
+        visibility = ["//visibility:private"],
+        tags = tags + ["ibazel_notify_changes"],
+        **kwargs
     )
