@@ -9,11 +9,6 @@ static void copy_files
 	, const bzlws_tool_lib::options&  options
 	);
 
-static void copy_file
-	( const bzlws_tool_lib::options&   options
-	, const bzlws_tool_lib::src_info&  src_info
-	);
-
 int bzlws_copy
 	( const char*                      argv0
 	, const std::vector<std::string>&  args
@@ -37,8 +32,6 @@ int bzlws_copy
 	auto workspace_dir = get_build_workspace_dir();
 	auto bzlignore = parse_bazelignore(workspace_dir);
 	auto options = parse_args(workspace_dir, argv0, args);
-	
-	auto wsDirSz = workspace_dir.generic_string().size();
 
 	for(const auto& info : options.srcs_info) {
 		bzlignore.assert_ignored_path(info.new_src_path);

@@ -3,13 +3,13 @@ load("@bzlws//rules:bzlws_link.bzl", "bzlws_link")
 
 bzlws_copy(
     name = "copy_example_txt",
-    srcs = ["example.txt"],
+    srcs = ["exampledir/example.txt"],
     out = "ignored_folder/{FILENAME}",
 )
 
 bzlws_copy(
     name = "copy_example_txt_file_path",
-    srcs = ["example.txt"],
+    srcs = ["exampledir/example.txt"],
     out = "ignored_folder/{FILEPATH}",
     force = True,
 )
@@ -23,31 +23,31 @@ bzlws_copy(
 
 bzlws_link(
     name = "link_example_txt",
-    srcs = ["example.txt"],
+    srcs = ["exampledir/example.txt"],
     out = "ignored_folder/{FILENAME}",
 )
 
 bzlws_copy(
     name = "copy_error_example_txt",
-    srcs = ["example.txt"],
+    srcs = ["exampledir/example.txt"],
     out = "folder/{FILENAME}",
 )
 
 bzlws_copy(
     name = "link_error_example_txt",
-    srcs = ["example.txt"],
+    srcs = ["exampledir/example.txt"],
     out = "folder/{FILENAME}",
 )
 
 bzlws_copy(
     name = "path_substitutions_example1",
-    srcs = ["example.txt"],
+    srcs = ["exampledir/example.txt"],
     out = "ignored_folder/__{BASENAME}__{EXT}",
 )
 
 bzlws_copy(
     name = "path_substitutions_example2",
-    srcs = ["example.txt"],
+    srcs = ["exampledir/example.txt"],
     out = "ignored_folder/{EXTNAME}__{FILENAME}",
 )
 
@@ -64,7 +64,7 @@ bzlws_copy(
 bzlws_copy(
     name = "info_all_example",
     srcs = ["info.txt"],
-    out = "example/ignored_folder/{FILENAME}",
+    out = "ignored_folder/{FILENAME}",
     substitutions = {
         "@bzlws//info:bazel-bin": "__bazel-bin",
         "@bzlws//info:bazel-genfiles": "__bazel-genfiles",
@@ -95,7 +95,7 @@ bzlws_copy(
 bzlws_copy(
     name = "stamp_subst_example",
     srcs = ["stamp_info.txt"],
-    out = "example/ignored_folder/{FILENAME}",
+    out = "ignored_folder/{FILENAME}",
     stamp_substitutions = {
         "BUILD_HOST": "__BUILD_HOST__",
     },
@@ -103,7 +103,7 @@ bzlws_copy(
 
 bzlws_copy(
     name = "stamp_out_path",
-    srcs = ["example.txt"],
-    out = "example/ignored_folder/{BUILD_HOST}/{BUILD_USER}/{FILENAME}",
+    srcs = ["exampledir/example.txt"],
+    out = "ignored_folder/{BUILD_HOST}/{BUILD_USER}/{FILENAME}",
     force = True,
 )

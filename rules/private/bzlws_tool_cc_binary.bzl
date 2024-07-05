@@ -99,6 +99,7 @@ def _bzlws_tool_cc_binary(ctx):
 
     return DefaultInfo(
         files = depset([output.executable]),
+        default_runfiles = ctx.runfiles(ctx.files.srcs + [output.executable]),
         executable = output.executable,
     )
 
