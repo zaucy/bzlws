@@ -7,12 +7,7 @@ Rules for bringing bazel artifacts out of the [bazel output directories](https:/
 Add to your `MODULE.bazel` file:
 
 ```python
-bazel_dep(name = "bzlws")
-git_override(
-    name = "bzlws",
-    remote = "https://github.com/zaucy/bzlws.git",
-    commit = "80c1bb3227579e134cdb8bdcfc245581fbfcd566",
-)
+bazel_dep(name = "bzlws", version = "0.2.0")
 ```
 
 On windows runfiles aren't enabled by default. `bzlws` needs runfiles in order to work. Enable them by adding this to your `.bazelrc`:
