@@ -225,6 +225,8 @@ fs::path bzlws_tool_lib::get_src_out_path
 	, fs::path         src_path
 	, bool             force
 	, std::string      strip_filepath_prefix
+	, std::string      target_os
+	, std::string      target_cpu
 	)
 {
 	auto label = parse_label_string(owner_label_str);
@@ -232,6 +234,13 @@ fs::path bzlws_tool_lib::get_src_out_path
 	auto ext_str = src_path.extension().string();
 	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
 	auto filepath = src_path.generic_string();
+
+	substr_str(out_dir_input, "{TARGET_OS}", target_os);
+	substr_str(out_dir_input, "{TARGET_CPU}", target_cpu);
+	if(!strip_filepath_prefix.empty()) {
+		substr_str(strip_filepath_prefix, "{TARGET_OS}", target_os);
+		substr_str(strip_filepath_prefix, "{TARGET_CPU}", target_cpu);
+	}
 
 	if(!strip_filepath_prefix.empty()) {
 		substr_str(strip_filepath_prefix, "{BAZEL_LABEL_NAME}", label.name);
@@ -325,6 +334,42 @@ static void parse_arg
 		return;
 	}
 
+	if(arg == "--platform_manifest") {
+		options.platform_manifest_path = next_arg();
+		std::string manifest_abs_path = options.platform_manifest_path;
+		if(!fs::exists(manifest_abs_path)) {
+			manifest_abs_path = runfiles.Rlocation(options.platform_manifest_path);
+		}
+		if(manifest_abs_path.empty() || !fs::exists(manifest_abs_path)) {
+			manifest_abs_path = (workspace_dir / options.platform_manifest_path).generic_string();
+		}
+		if(fs::exists(manifest_abs_path)) {
+			std::ifstream infile(manifest_abs_path);
+			std::string line;
+			while(std::getline(infile, line)) {
+				if(line.empty()) continue;
+				std::istringstream iss(line);
+				std::string path, os, cpu;
+				if(iss >> path >> os >> cpu) {
+					options.platform_manifest[path] = {os, cpu};
+				}
+			}
+		} else {
+			std::cerr << "[WARNING] Platform manifest not found: " << options.platform_manifest_path << std::endl;
+		}
+		return;
+	}
+
+	if(arg == "--default_target_os") {
+		options.default_target_os = next_arg();
+		return;
+	}
+
+	if(arg == "--default_target_cpu") {
+		options.default_target_cpu = next_arg();
+		return;
+	}
+
 	auto target_str = arg;
 	const std::string potential_src_path = next_arg();
 	std::string src_path = potential_src_path;
@@ -359,26 +404,50 @@ static void parse_arg
 				continue;
 			}
 
+			std::string target_os = options.default_target_os;
+			std::string target_cpu = options.default_target_cpu;
+			auto path_str = other_src_path.path().generic_string();
+			auto it = options.platform_manifest.find(path_str);
+			if (it == options.platform_manifest.end()) {
+				it = options.platform_manifest.find(potential_src_path);
+			}
+			if (it != options.platform_manifest.end()) {
+				target_os = it->second.first;
+				target_cpu = it->second.second;
+			}
+
 			auto src_out_path = bzlws_tool_lib::get_src_out_path(
 				workspace_dir,
 				options.output_path,
 				target_str,
-				other_src_path,
+				other_src_path.path(),
 				options.force,
-				options.strip_filepath_prefix
+				options.strip_filepath_prefix,
+				target_os,
+				target_cpu
 			);
 
-			options.srcs_info.push_back({other_src_path, src_out_path});
+			options.srcs_info.push_back({other_src_path.path(), src_out_path});
 		}
 
 	} else {
+		std::string target_os = options.default_target_os;
+		std::string target_cpu = options.default_target_cpu;
+		auto it = options.platform_manifest.find(potential_src_path);
+		if (it != options.platform_manifest.end()) {
+			target_os = it->second.first;
+			target_cpu = it->second.second;
+		}
+
 		auto src_out_path = bzlws_tool_lib::get_src_out_path(
 			workspace_dir,
 			options.output_path,
 			target_str,
 			src_path,
 			options.force,
-			options.strip_filepath_prefix
+			options.strip_filepath_prefix,
+			target_os,
+			target_cpu
 		);
 
 		options.srcs_info.push_back({src_path, src_out_path});

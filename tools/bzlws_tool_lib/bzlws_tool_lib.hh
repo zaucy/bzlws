@@ -47,6 +47,10 @@ namespace bzlws_tool_lib {
 		std::string strip_filepath_prefix;
 		std::string output_path;
 		bool force = false;
+		std::string default_target_os;
+		std::string default_target_cpu;
+		std::string platform_manifest_path;
+		std::map<std::string, std::pair<std::string, std::string>> platform_manifest;
 	};
 
 	options parse_argv
@@ -88,6 +92,8 @@ namespace bzlws_tool_lib {
 		, fs::path         src_path
 		, bool             force
 		, std::string      strip_filepath_prefix
+		, std::string      target_os
+		, std::string      target_cpu
 		);
 
 	void remove_previous_generated_files

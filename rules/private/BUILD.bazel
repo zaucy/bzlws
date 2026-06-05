@@ -32,9 +32,19 @@ bzl_library(
 )
 
 bzl_library(
+    name = "bzlws_platform_info",
+    srcs = ["bzlws_platform_info.bzl"],
+    deps = [
+    ],
+)
+
+bzl_library(
     name = "bzlws_tool_cc_binary",
     srcs = ["bzlws_tool_cc_binary.bzl"],
     deps = [
+        ":bzlws_info",
+        ":bzlws_util",
+        ":bzlws_platform_info",
         ":rules_cc",
     ],
 )

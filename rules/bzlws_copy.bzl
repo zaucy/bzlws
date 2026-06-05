@@ -24,6 +24,16 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
             you would like to have the name of the host machine in your output
             path you would put `out = "my/path/{BUILD_HOST}/{FILENAME}"`
 
+            The following target platform values are also replaced:
+
+            `{TARGET_OS}` - Target platform OS (e.g. `linux`, `windows`, `macos`)
+
+            `{TARGET_CPU}` - Target platform CPU (e.g. `x86_64`, `aarch64`, `arm`)
+
+            These are resolved from `@platforms//os` and `@platforms//cpu`
+            constraint values at analysis time. They work correctly with
+            cross-compilation transition rules.
+
             **Phase 2:**
 
             The following gets replaced about each items in `srcs`
@@ -47,6 +57,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
             `{FILEPATH}` - File path. https://bazel.build/rules/lib/File#path
 
             `{BASENAME}` - Path basename
+
 
         strip_filepath_prefix: Strip prefix of `{FILEPATH}`
 
