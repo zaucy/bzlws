@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.0 - 2026-06-05
+#### Features
+- allow specifying TARGET_OS and TARGET_CPU in out path (#20) - (4df9d36) - Ezekiel Warren
+#### Miscellaneous Chores
+- update readme - (5e26474) - Ezekiel Warren
+- update readme - (846f84a) - Ezekiel Warren
+
+- - -
+
 ## 0.2.0 - 2024-07-05
 #### Features
 - use C++ toolchain directly and reorganize folder structure (#15) - (80c1bb3) - Ezekiel Warren
