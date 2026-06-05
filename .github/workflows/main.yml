@@ -29,6 +29,6 @@ jobs:
       - shell: bash
         working-directory: test
         run: |
-					export CC=clang
-					export CXX=clang++
+          export CC=clang
+          export CXX=clang++
           ./test.sh
