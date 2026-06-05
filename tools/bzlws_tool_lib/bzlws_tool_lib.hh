@@ -90,6 +90,7 @@ namespace bzlws_tool_lib {
 		, std::string      out_dir_input
 		, std::string      owner_label_str
 		, fs::path         src_path
+		, std::string      bzl_file_path
 		, bool             force
 		, std::string      strip_filepath_prefix
 		, std::string      target_os

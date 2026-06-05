@@ -19,3 +19,7 @@ register_toolchains(
     "@llvm_toolchain//:all",
     dev_dependency = True,
 )
+
+faux_repo_ext = use_extension("//:extensions.bzl", "faux_repo_extension")
+use_repo(faux_repo_ext, "faux_repo")
+

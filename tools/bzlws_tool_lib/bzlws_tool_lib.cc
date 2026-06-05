@@ -55,6 +55,29 @@ namespace {
 	{
 		std::exit(static_cast<int>(code));
 	}
+
+	std::string get_apparent_repo_name(const std::string& canonical) {
+		if (canonical.empty()) return "";
+
+		if (canonical[0] == '+') {
+			auto last_plus = canonical.find_last_of('+');
+			if (last_plus != std::string::npos && last_plus < canonical.size() - 1) {
+				return canonical.substr(last_plus + 1);
+			}
+		}
+
+		auto last_tilde = canonical.find_last_of('~');
+		if (last_tilde != std::string::npos) {
+			auto first_tilde = canonical.find_first_of('~');
+			if (first_tilde == last_tilde) {
+				return canonical.substr(0, first_tilde);
+			} else {
+				return canonical.substr(last_tilde + 1);
+			}
+		}
+
+		return canonical;
+	}
 }
 
 bool bzlws_tool_lib::force_remove
@@ -223,6 +246,7 @@ fs::path bzlws_tool_lib::get_src_out_path
 	, std::string      out_dir_input
 	, std::string      owner_label_str
 	, fs::path         src_path
+	, std::string      bzl_file_path
 	, bool             force
 	, std::string      strip_filepath_prefix
 	, std::string      target_os
@@ -230,10 +254,19 @@ fs::path bzlws_tool_lib::get_src_out_path
 	)
 {
 	auto label = parse_label_string(owner_label_str);
+	label.workspace_name = get_apparent_repo_name(label.workspace_name);
 
 	auto ext_str = src_path.extension().string();
 	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
-	auto filepath = src_path.generic_string();
+	auto filepath = bzl_file_path;
+	if (filepath.compare(0, 9, "external/") == 0) {
+		auto slash_idx = filepath.find('/', 9);
+		if (slash_idx != std::string::npos) {
+			auto canonical_repo = filepath.substr(9, slash_idx - 9);
+			auto apparent_repo = get_apparent_repo_name(canonical_repo);
+			filepath = "external/" + apparent_repo + filepath.substr(slash_idx);
+		}
+	}
 
 	substr_str(out_dir_input, "{TARGET_OS}", target_os);
 	substr_str(out_dir_input, "{TARGET_CPU}", target_cpu);
@@ -377,6 +410,11 @@ static void parse_arg
 	if(!fs::exists(src_path)) {
 		// If the file doesn't exist from our current directory check the runfiles
 		src_path = runfiles.Rlocation(potential_src_path);
+		if (src_path.empty() || !fs::exists(src_path)) {
+			if (potential_src_path.compare(0, 9, "external/") == 0) {
+				src_path = runfiles.Rlocation(potential_src_path.substr(9));
+			}
+		}
 	}
 
 	if(src_path.empty() || !fs::exists(src_path)) {
@@ -416,11 +454,15 @@ static void parse_arg
 				target_cpu = it->second.second;
 			}
 
+			auto rel_path = fs::relative(other_src_path.path(), src_path);
+			auto bzl_file_path = (fs::path(potential_src_path) / rel_path).generic_string();
+
 			auto src_out_path = bzlws_tool_lib::get_src_out_path(
 				workspace_dir,
 				options.output_path,
 				target_str,
 				other_src_path.path(),
+				bzl_file_path,
 				options.force,
 				options.strip_filepath_prefix,
 				target_os,
@@ -444,6 +486,7 @@ static void parse_arg
 			options.output_path,
 			target_str,
 			src_path,
+			potential_src_path,
 			options.force,
 			options.strip_filepath_prefix,
 			target_os,
