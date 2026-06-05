@@ -20,6 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: setup llvm
+        if: matrix.os != 'windows-latest'
+        uses: ZhongRuoyu/setup-llvm@v0
+        with:
+          llvm-version: 22
       - run: sudo chmod +x ./test/test.sh
-      - run: ./test.sh
+      - shell: bash
         working-directory: test
+        run: |
+					export CC=clang
+					export CXX=clang++
+          ./test.sh
