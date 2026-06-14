@@ -1,24 +1,18 @@
 #include "bzlws_extract.hh"
 
+#include "tools/bzlws_tool_lib/bzlws_tool_lib.hh"
+
 #include <cstdlib>
-#include <string>
-#include <iostream>
 #include <exception>
 #include <filesystem>
-#include "tools/bzlws_tool_lib/bzlws_tool_lib.hh"
+#include <iostream>
+#include <string>
 
 namespace fs = std::filesystem;
 
-static void extract_files
-	( const std::filesystem::path&    workspace_dir
-	, const bzlws_tool_lib::options&  options
-	);
+static void extract_files(const std::filesystem::path& workspace_dir, const bzlws_tool_lib::options& options);
 
-int bzlws_extract
-	( const char*                      argv0
-	, const std::vector<std::string>&  args
-	)
-{
+int bzlws_extract(const char* argv0, const std::vector<std::string>& args) {
 	using namespace bzlws_tool_lib;
 
 	std::set_terminate([] {
@@ -35,9 +29,9 @@ int bzlws_extract
 	});
 
 	auto workspace_dir = get_build_workspace_dir();
-	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto options = parse_args(workspace_dir, argv0, args);
-	
+	auto bzlignore     = parse_bazelignore(workspace_dir);
+	auto options       = parse_args(workspace_dir, argv0, args);
+
 	auto wsDirSz = workspace_dir.generic_string().size();
 
 	for(const auto& info : options.srcs_info) {
@@ -46,8 +40,8 @@ int bzlws_extract
 
 	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::remove_previous_generated_files(
-			workspace_dir,
-			options.metafile_path
+		  workspace_dir,
+		  options.metafile_path
 		);
 	}
 
@@ -55,9 +49,9 @@ int bzlws_extract
 
 	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::write_generated_metadata_file(
-			workspace_dir,
-			options.metafile_path,
-			options.srcs_info
+		  workspace_dir,
+		  options.metafile_path,
+		  options.srcs_info
 		);
 	}
 
@@ -76,13 +70,11 @@ int bzlws_extract
 	return 0;
 }
 
-void extract_files
-	( const std::filesystem::path&    workspace_dir
-	, const bzlws_tool_lib::options&  options
-	)
-{
+void extract_files(const std::filesystem::path& workspace_dir, const bzlws_tool_lib::options& options) {
 	for(auto& src : options.srcs_info) {
-		if(!fs::exists(src.new_src_path)) continue;
+		if(!fs::exists(src.new_src_path)) {
+			continue;
+		}
 
 		for(auto p : fs::recursive_directory_iterator(src.new_src_path)) {
 			std::error_code ec;
@@ -100,8 +92,10 @@ void extract_files
 		auto exit_code = std::system(tar_args.c_str());
 		if(exit_code == 0) {
 			std::cout
-				<< src.src_path.string() << " -> "
-				<< src.new_src_path.string() << "\n";
+			  << src.src_path.string()
+			  << " -> "
+			  << src.new_src_path.string()
+			  << "\n";
 		} else {
 			std::cerr << "tar command failed: exit code " << exit_code << "\n";
 		}

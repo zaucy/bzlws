@@ -1,19 +1,20 @@
 #include "bzlws_tool_lib.hh"
 
-#include <fstream>
-#include <array>
-#include <cstdio>
-#include <memory>
-#include <sstream>
-#include <cstring>
-#include <string>
-#include <iostream>
-#include <yaml-cpp/yaml.h>
 #include "tools/cpp/runfiles/runfiles.h"
 
+#include <array>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <yaml-cpp/yaml.h>
+
 #if _WIN32
-	#define popen _popen
-	#define pclose _pclose 
+#	define popen _popen
+#	define pclose _pclose
 #endif // _WIN32
 
 namespace fs = bzlws_tool_lib::fs;
@@ -21,73 +22,67 @@ using bzlws_tool_lib::bazelignore_parse_results;
 using bzlws_tool_lib::src_info;
 
 namespace {
-	struct bazel_label_info {
-		std::string name;
-		std::string package;
-		std::string workspace_name;
-	};
+struct bazel_label_info {
+	std::string name;
+	std::string package;
+	std::string workspace_name;
+};
 
-	bazel_label_info parse_label_string
-		( const std::string& label_str
-		)
-	{
-		bazel_label_info info;
-		auto ws_name_end = label_str.find("//");
+bazel_label_info parse_label_string(const std::string& label_str) {
+	bazel_label_info info;
+	auto             ws_name_end = label_str.find("//");
 
-		if(ws_name_end == std::string::npos) return info;
-		info.workspace_name = label_str.substr(1, ws_name_end - 1);
-
-		auto package_name_end = label_str.find_last_of(":");
-		if(package_name_end == std::string::npos) return info;
-		info.package = label_str.substr(
-			ws_name_end + 2,
-			package_name_end - (ws_name_end + 2)
-		);
-		info.name = label_str.substr(package_name_end + 1);
-
+	if(ws_name_end == std::string::npos) {
 		return info;
 	}
+	info.workspace_name = label_str.substr(1, ws_name_end - 1);
 
-	[[noreturn]]
-	void tool_exit
-		( bzlws_tool_lib::exit_code code
-		)
-	{
-		std::exit(static_cast<int>(code));
+	auto package_name_end = label_str.find_last_of(":");
+	if(package_name_end == std::string::npos) {
+		return info;
 	}
+	info.package = label_str.substr(
+	  ws_name_end + 2,
+	  package_name_end - (ws_name_end + 2)
+	);
+	info.name = label_str.substr(package_name_end + 1);
 
-	std::string get_apparent_repo_name(const std::string& canonical) {
-		if (canonical.empty()) return "";
-
-		if (canonical[0] == '+') {
-			auto last_plus = canonical.find_last_of('+');
-			if (last_plus != std::string::npos && last_plus < canonical.size() - 1) {
-				return canonical.substr(last_plus + 1);
-			}
-		}
-
-		auto last_tilde = canonical.find_last_of('~');
-		if (last_tilde != std::string::npos) {
-			auto first_tilde = canonical.find_first_of('~');
-			if (first_tilde == last_tilde) {
-				return canonical.substr(0, first_tilde);
-			} else {
-				return canonical.substr(last_tilde + 1);
-			}
-		}
-
-		return canonical;
-	}
+	return info;
 }
 
-bool bzlws_tool_lib::force_remove
-	( const fs::path& path
-	, std::error_code& ec
-	) noexcept
-{
-	fs::permissions(path, 
-		fs::perms::owner_write | fs::perms::group_write | fs::perms::others_write, 
-		fs::perm_options::add, ec);
+[[noreturn]]
+void tool_exit(bzlws_tool_lib::exit_code code) {
+	std::exit(static_cast<int>(code));
+}
+
+std::string get_apparent_repo_name(const std::string& canonical) {
+	if(canonical.empty()) {
+		return "";
+	}
+
+	if(canonical[0] == '+') {
+		auto last_plus = canonical.find_last_of('+');
+		if(last_plus != std::string::npos && last_plus < canonical.size() - 1) {
+			return canonical.substr(last_plus + 1);
+		}
+	}
+
+	auto last_tilde = canonical.find_last_of('~');
+	if(last_tilde != std::string::npos) {
+		auto first_tilde = canonical.find_first_of('~');
+		if(first_tilde == last_tilde) {
+			return canonical.substr(0, first_tilde);
+		} else {
+			return canonical.substr(last_tilde + 1);
+		}
+	}
+
+	return canonical;
+}
+} // namespace
+
+bool bzlws_tool_lib::force_remove(const fs::path& path, std::error_code& ec) noexcept {
+	fs::permissions(path, fs::perms::owner_write | fs::perms::group_write | fs::perms::others_write, fs::perm_options::add, ec);
 	if(ec) {
 		// Ignore permission change errors, try to remove anyway
 		ec.clear();
@@ -96,12 +91,9 @@ bool bzlws_tool_lib::force_remove
 	return fs::remove(path, ec);
 }
 
-void bzlws_tool_lib::trim_ws
-	( std::string& s
-	)
-{
-	using std::isspace;
+void bzlws_tool_lib::trim_ws(std::string& s) {
 	using std::find_if;
+	using std::isspace;
 
 	auto not_isspace = [](int c) { return !isspace(c); };
 	s.erase(s.begin(), find_if(s.begin(), s.end(), not_isspace));
@@ -115,20 +107,17 @@ fs::path bzlws_tool_lib::get_build_workspace_dir() {
 	}
 
 	std::cerr
-		<< "[ERROR] Missing 'BUILD_WORKSPACE_DIRECTORY' environment variable"
-		<< std::endl;
+	  << "[ERROR] Missing 'BUILD_WORKSPACE_DIRECTORY' environment variable"
+	  << std::endl;
 	tool_exit(exit_code::missing_environment_variable);
 }
 
-bool bazelignore_parse_results::is_ignored_path
-	( const fs::path& path
-	)
-{
+bool bazelignore_parse_results::is_ignored_path(const fs::path& path) {
 	auto pathPrefix = fs::absolute(path).make_preferred().string();
 
 	for(auto ignore_path : ignore_paths) {
 		auto ignorePathPrefix =
-			fs::absolute(ignore_path).make_preferred().string();
+		  fs::absolute(ignore_path).make_preferred().string();
 
 		if(pathPrefix.rfind(ignorePathPrefix) == 0) {
 			return true;
@@ -138,45 +127,46 @@ bool bazelignore_parse_results::is_ignored_path
 	return false;
 }
 
-void bazelignore_parse_results::assert_ignored_path
-	( const fs::path& path
-	)
-{
+void bazelignore_parse_results::assert_ignored_path(const fs::path& path) {
 	if(!is_ignored_path(path)) {
 		std::cerr
-			<< "[ERROR] \"" << path.generic_string()
-			<< "\" is not within a bazel ignored directory. "
-			<< "Please check your .bazelignore file" << std::endl;
+		  << "[ERROR] \""
+		  << path.generic_string()
+		  << "\" is not within a bazel ignored directory. "
+		  << "Please check your .bazelignore file"
+		  << std::endl;
 		tool_exit(exit_code::bazelignore_error);
 	}
 }
 
-bazelignore_parse_results bzlws_tool_lib::parse_bazelignore
-	( const fs::path& workspace_dir
-	)
-{
+bazelignore_parse_results bzlws_tool_lib::parse_bazelignore(const fs::path& workspace_dir) {
 	auto bazelignore_path = workspace_dir / ".bazelignore";
 
 	{
 		std::error_code ec;
-		auto bazelignore_exists = fs::exists(bazelignore_path, ec);
+		auto            bazelignore_exists = fs::exists(bazelignore_path, ec);
 		if(ec) {
 			std::cerr
-				<< "Error while checking if " << bazelignore_path << " exists: "
-				<< ec.message()
-				<< std::endl;
+			  << "Error while checking if "
+			  << bazelignore_path
+			  << " exists: "
+			  << ec.message()
+			  << std::endl;
 			tool_exit(exit_code::filesystem_error);
 		}
 
 		if(!bazelignore_exists) {
 			std::cerr
-				<< "[ERROR] " << bazelignore_path <<  " does not exist" << std::endl;
+			  << "[ERROR] "
+			  << bazelignore_path
+			  << " does not exist"
+			  << std::endl;
 			tool_exit(exit_code::filesystem_error);
 		}
 	}
 
 	bazelignore_parse_results results;
-	std::ifstream bazelignore_file(bazelignore_path);
+	std::ifstream             bazelignore_file(bazelignore_path);
 
 	{
 		std::string line;
@@ -193,14 +183,14 @@ bazelignore_parse_results bzlws_tool_lib::parse_bazelignore
 
 std::string python_like_slice(std::string value, const std::string& slice) {
 	auto colon_count = std::count_if(
-		slice.begin(),
-		slice.end(),
-		[](char c) { return c == ':'; }
+	  slice.begin(),
+	  slice.end(),
+	  [](char c) { return c == ':'; }
 	);
 
 	if(colon_count > 1 || slice[0] != ':') {
 		throw std::invalid_argument(
-			"bzlws slice syntax is very limited right now. only [:start] is allows"
+		  "bzlws slice syntax is very limited right now. only [:start] is allows"
 		);
 	}
 
@@ -214,14 +204,9 @@ std::string python_like_slice(std::string value, const std::string& slice) {
 	return value;
 }
 
-void bzlws_tool_lib::substr_str
-	( std::string&        str
-	, const char*         subst_id
-	, const std::string&  subst_value
-	)
-{
-	const auto subst_id_len = strlen(subst_id);
-	auto substr_id_idx = str.find(subst_id);
+void bzlws_tool_lib::substr_str(std::string& str, const char* subst_id, const std::string& subst_value) {
+	const auto subst_id_len  = strlen(subst_id);
+	auto       substr_id_idx = str.find(subst_id);
 	while(substr_id_idx != std::string::npos) {
 		auto slice_start_idx = substr_id_idx + subst_id_len;
 		if(str.size() > slice_start_idx && str[slice_start_idx] == '[') {
@@ -231,11 +216,11 @@ void bzlws_tool_lib::substr_str
 			}
 
 			auto slice = str.substr(
-				slice_start_idx + 1,
-				slice_end_idx - slice_start_idx - 1
+			  slice_start_idx + 1,
+			  slice_end_idx - slice_start_idx - 1
 			);
 			auto sliced_subst_value = python_like_slice(subst_value, slice);
-			
+
 			str.replace(slice_start_idx, slice_end_idx - slice_start_idx + 1, "");
 			str.replace(substr_id_idx, subst_id_len, sliced_subst_value);
 		} else {
@@ -246,45 +231,33 @@ void bzlws_tool_lib::substr_str
 	}
 }
 
-fs::path bzlws_tool_lib::get_src_out_path
-	( const fs::path&  workspace_dir
-	, std::string      out_dir_input
-	, std::string      owner_label_str
-	, fs::path         src_path
-	, std::string      bzl_file_path
-	, bool             force
-	, std::string      strip_filepath_prefix
-	, const std::vector<std::pair<std::string, std::string>>& remap_paths
-	, std::string      target_os
-	, std::string      target_cpu
-	)
-{
-	auto label = parse_label_string(owner_label_str);
+fs::path bzlws_tool_lib::get_src_out_path(const fs::path& workspace_dir, std::string out_dir_input, std::string owner_label_str, fs::path src_path, std::string bzl_file_path, bool force, std::string strip_filepath_prefix, const std::vector<std::pair<std::string, std::string>>& remap_paths, std::string target_os, std::string target_cpu) {
+	auto label           = parse_label_string(owner_label_str);
 	label.workspace_name = get_apparent_repo_name(label.workspace_name);
 
-	auto ext_str = src_path.extension().string();
-	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
+	auto ext_str  = src_path.extension().string();
+	auto extname  = ext_str.empty() ? "" : ext_str.substr(1);
 	auto filepath = bzl_file_path;
 
 	// NOTE: this is kind of a hack, I'm not sure if there's a better way to detect this.
 	// Strip bazel-out/<config>/<tree>/ prefix from generated file paths so that
 	// {FILEPATH} is workspace-relative rather than including the output tree.
-	if (filepath.compare(0, 10, "bazel-out/") == 0) {
+	if(filepath.compare(0, 10, "bazel-out/") == 0) {
 		auto second_slash = filepath.find('/', 10);
-		if (second_slash != std::string::npos) {
+		if(second_slash != std::string::npos) {
 			auto third_slash = filepath.find('/', second_slash + 1);
-			if (third_slash != std::string::npos) {
+			if(third_slash != std::string::npos) {
 				filepath = filepath.substr(third_slash + 1);
 			}
 		}
 	}
 
-	if (filepath.compare(0, 9, "external/") == 0) {
+	if(filepath.compare(0, 9, "external/") == 0) {
 		auto slash_idx = filepath.find('/', 9);
-		if (slash_idx != std::string::npos) {
+		if(slash_idx != std::string::npos) {
 			auto canonical_repo = filepath.substr(9, slash_idx - 9);
-			auto apparent_repo = get_apparent_repo_name(canonical_repo);
-			filepath = "external/" + apparent_repo + filepath.substr(slash_idx);
+			auto apparent_repo  = get_apparent_repo_name(canonical_repo);
+			filepath            = "external/" + apparent_repo + filepath.substr(slash_idx);
 		}
 	}
 
@@ -298,10 +271,8 @@ fs::path bzlws_tool_lib::get_src_out_path
 	if(!strip_filepath_prefix.empty()) {
 		substr_str(strip_filepath_prefix, "{BAZEL_LABEL_NAME}", label.name);
 		substr_str(strip_filepath_prefix, "{BAZEL_LABEL_PACKAGE}", label.package);
-		substr_str(strip_filepath_prefix, "{BAZEL_LABEL_WORKSPACE_NAME}",
-			label.workspace_name);
-		substr_str(strip_filepath_prefix, "{BAZEL_FULL_LABEL}",
-			label.workspace_name + "/" + label.package + "/" + label.name);
+		substr_str(strip_filepath_prefix, "{BAZEL_LABEL_WORKSPACE_NAME}", label.workspace_name);
+		substr_str(strip_filepath_prefix, "{BAZEL_FULL_LABEL}", label.workspace_name + "/" + label.package + "/" + label.name);
 		substr_str(strip_filepath_prefix, "{BAZEL_LABEL}", label.package + "/" + label.name);
 
 		if(filepath.rfind(strip_filepath_prefix, 0) == 0) {
@@ -309,12 +280,12 @@ fs::path bzlws_tool_lib::get_src_out_path
 		}
 	}
 
-	std::string longest_matched_prefix = "";
+	std::string longest_matched_prefix        = "";
 	std::string replacement_for_longest_match = "";
-	bool found_match = false;
+	bool        found_match                   = false;
 
 	for(const auto& remap : remap_paths) {
-		std::string prefix = remap.first;
+		std::string prefix      = remap.first;
 		std::string replacement = remap.second;
 
 		substr_str(prefix, "\\", "/");
@@ -337,9 +308,9 @@ fs::path bzlws_tool_lib::get_src_out_path
 		substr_str(replacement, "{BAZEL_LABEL}", label.package + "/" + label.name);
 
 		if(filepath.rfind(prefix, 0) == 0) {
-			if (!found_match || prefix.length() > longest_matched_prefix.length()) {
-				found_match = true;
-				longest_matched_prefix = prefix;
+			if(!found_match || prefix.length() > longest_matched_prefix.length()) {
+				found_match                   = true;
+				longest_matched_prefix        = prefix;
 				replacement_for_longest_match = replacement;
 			}
 		}
@@ -351,10 +322,8 @@ fs::path bzlws_tool_lib::get_src_out_path
 
 	substr_str(out_dir_input, "{BAZEL_LABEL_NAME}", label.name);
 	substr_str(out_dir_input, "{BAZEL_LABEL_PACKAGE}", label.package);
-	substr_str(out_dir_input, "{BAZEL_LABEL_WORKSPACE_NAME}",
-		label.workspace_name);
-	substr_str(out_dir_input, "{BAZEL_FULL_LABEL}",
-		label.workspace_name + "/" + label.package + "/" + label.name);
+	substr_str(out_dir_input, "{BAZEL_LABEL_WORKSPACE_NAME}", label.workspace_name);
+	substr_str(out_dir_input, "{BAZEL_FULL_LABEL}", label.workspace_name + "/" + label.package + "/" + label.name);
 	substr_str(out_dir_input, "{BAZEL_LABEL}", label.package + "/" + label.name);
 
 	substr_str(out_dir_input, "{EXT}", ext_str);
@@ -362,17 +331,17 @@ fs::path bzlws_tool_lib::get_src_out_path
 	substr_str(out_dir_input, "{FILENAME}", src_path.filename().string());
 	substr_str(out_dir_input, "{FILEPATH}", filepath);
 
-	substr_str(out_dir_input, "{BASENAME}",
-		src_path.filename().replace_extension().string());
+	substr_str(out_dir_input, "{BASENAME}", src_path.filename().replace_extension().string());
 
 	fs::path out_path = workspace_dir / out_dir_input;
-	fs::path out_dir = fs::path(out_path).remove_filename();
+	fs::path out_dir  = fs::path(out_path).remove_filename();
 
 	if(!fs::exists(out_dir)) {
 		if(!force) {
 			std::cerr
-				<< "Out path directory does not exist: "
-				<< out_dir.generic_string() << std::endl;
+			  << "Out path directory does not exist: "
+			  << out_dir.generic_string()
+			  << std::endl;
 			tool_exit(exit_code::filesystem_no_force_error);
 		}
 
@@ -388,14 +357,7 @@ fs::path bzlws_tool_lib::get_src_out_path
 }
 
 template<typename NextArgFnT>
-static void parse_arg
-	( const std::string&                      arg
-	, const fs::path&                         workspace_dir
-	, bzlws_tool_lib::options&                options
-	, NextArgFnT                              next_arg
-	, bazel::tools::cpp::runfiles::Runfiles&  runfiles
-	)
-{
+static void parse_arg(const std::string& arg, const fs::path& workspace_dir, bzlws_tool_lib::options& options, NextArgFnT next_arg, bazel::tools::cpp::runfiles::Runfiles& runfiles) {
 	if(arg == "--force") {
 		options.force = true;
 		return;
@@ -413,7 +375,7 @@ static void parse_arg
 	}
 
 	if(arg == "--remap_path") {
-		auto prefix = next_arg();
+		auto prefix      = next_arg();
 		auto replacement = next_arg();
 		options.remap_paths.push_back({prefix, replacement});
 		return;
@@ -436,7 +398,7 @@ static void parse_arg
 
 	if(arg == "--platform_manifest") {
 		options.platform_manifest_path = next_arg();
-		std::string manifest_abs_path = options.platform_manifest_path;
+		std::string manifest_abs_path  = options.platform_manifest_path;
 		if(!fs::exists(manifest_abs_path)) {
 			manifest_abs_path = runfiles.Rlocation(options.platform_manifest_path);
 		}
@@ -445,11 +407,13 @@ static void parse_arg
 		}
 		if(fs::exists(manifest_abs_path)) {
 			std::ifstream infile(manifest_abs_path);
-			std::string line;
+			std::string   line;
 			while(std::getline(infile, line)) {
-				if(line.empty()) continue;
+				if(line.empty()) {
+					continue;
+				}
 				std::istringstream iss(line);
-				std::string path, os, cpu;
+				std::string        path, os, cpu;
 				if(iss >> path >> os >> cpu) {
 					options.platform_manifest[path] = {os, cpu};
 				}
@@ -470,15 +434,15 @@ static void parse_arg
 		return;
 	}
 
-	auto target_str = arg;
+	auto              target_str         = arg;
 	const std::string potential_src_path = next_arg();
-	std::string src_path = potential_src_path;
+	std::string       src_path           = potential_src_path;
 
 	if(!fs::exists(src_path)) {
 		// If the file doesn't exist from our current directory check the runfiles
 		src_path = runfiles.Rlocation(potential_src_path);
-		if (src_path.empty() || !fs::exists(src_path)) {
-			if (potential_src_path.compare(0, 9, "external/") == 0) {
+		if(src_path.empty() || !fs::exists(src_path)) {
+			if(potential_src_path.compare(0, 9, "external/") == 0) {
 				src_path = runfiles.Rlocation(potential_src_path.substr(9));
 			}
 		}
@@ -490,108 +454,108 @@ static void parse_arg
 
 	if(src_path.empty() || !fs::exists(src_path)) {
 		std::cerr
-			<< "Source path does not exist: "
-			<< potential_src_path << std::endl;
+		  << "Source path does not exist: "
+		  << potential_src_path
+		  << std::endl;
 		tool_exit(bzlws_tool_lib::exit_code::source_path_does_not_exist);
 	}
 
 	if(options.output_path.empty()) {
 		std::cerr
-			<< "[ERROR] --output flag must come before any non-flag arguments"
-			<< std::endl;
+		  << "[ERROR] --output flag must come before any non-flag arguments"
+		  << std::endl;
 		tool_exit(bzlws_tool_lib::exit_code::invalid_arguments);
 	}
 
 	if(fs::is_directory(src_path)) {
-
 		for(auto other_src_path : fs::recursive_directory_iterator(src_path)) {
 			if(fs::is_directory(other_src_path)) {
 				continue;
 			}
 
-			std::string target_os = options.default_target_os;
+			std::string target_os  = options.default_target_os;
 			std::string target_cpu = options.default_target_cpu;
-			auto path_str = other_src_path.path().generic_string();
-			auto it = options.platform_manifest.find(path_str);
-			if (it == options.platform_manifest.end()) {
+			auto        path_str   = other_src_path.path().generic_string();
+			auto        it         = options.platform_manifest.find(path_str);
+			if(it == options.platform_manifest.end()) {
 				it = options.platform_manifest.find(potential_src_path);
 			}
-			if (it != options.platform_manifest.end()) {
-				target_os = it->second.first;
+			if(it != options.platform_manifest.end()) {
+				target_os  = it->second.first;
 				target_cpu = it->second.second;
 			}
 
-			auto rel_path = fs::relative(other_src_path.path(), src_path);
+			auto rel_path      = fs::relative(other_src_path.path(), src_path);
 			auto bzl_file_path = (fs::path(potential_src_path) / rel_path).generic_string();
 
 			auto src_out_path = bzlws_tool_lib::get_src_out_path(
-				workspace_dir,
-				options.output_path,
-				target_str,
-				other_src_path.path(),
-				bzl_file_path,
-				options.force,
-				options.strip_filepath_prefix,
-				options.remap_paths,
-				target_os,
-				target_cpu
+			  workspace_dir,
+			  options.output_path,
+			  target_str,
+			  other_src_path.path(),
+			  bzl_file_path,
+			  options.force,
+			  options.strip_filepath_prefix,
+			  options.remap_paths,
+			  target_os,
+			  target_cpu
 			);
 
 			options.srcs_info.push_back({other_src_path.path(), src_out_path});
 		}
 
 	} else {
-		std::string target_os = options.default_target_os;
+		std::string target_os  = options.default_target_os;
 		std::string target_cpu = options.default_target_cpu;
-		auto it = options.platform_manifest.find(potential_src_path);
-		if (it != options.platform_manifest.end()) {
-			target_os = it->second.first;
+		auto        it         = options.platform_manifest.find(potential_src_path);
+		if(it != options.platform_manifest.end()) {
+			target_os  = it->second.first;
 			target_cpu = it->second.second;
 		}
 
 		auto src_out_path = bzlws_tool_lib::get_src_out_path(
-			workspace_dir,
-			options.output_path,
-			target_str,
-			src_path,
-			potential_src_path,
-			options.force,
-			options.strip_filepath_prefix,
-			options.remap_paths,
-			target_os,
-			target_cpu
+		  workspace_dir,
+		  options.output_path,
+		  target_str,
+		  src_path,
+		  potential_src_path,
+		  options.force,
+		  options.strip_filepath_prefix,
+		  options.remap_paths,
+		  target_os,
+		  target_cpu
 		);
 
 		options.srcs_info.push_back({src_path, src_out_path});
 	}
 }
 
-bzlws_tool_lib::options bzlws_tool_lib::parse_args
-	( const fs::path&                  workspace_dir
-	, const char*                      arv0
-	, const std::vector<std::string>&  args
-	)
-{
+bzlws_tool_lib::options bzlws_tool_lib::parse_args(const fs::path& workspace_dir, const char* arv0, const std::vector<std::string>& args) {
 	using bazel::tools::cpp::runfiles::Runfiles;
 
-	std::string cmd;
-	std::string error;
-	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(arv0, BAZEL_CURRENT_REPOSITORY,  &error));
+	std::string               cmd;
+	std::string               error;
+	std::unique_ptr<Runfiles> runfiles(Runfiles::Create(arv0, BAZEL_CURRENT_REPOSITORY, &error));
 	if(!error.empty()) {
 		std::cerr
-			<< "[[RUNFILES ERROR]]" << std::endl
-			<< "  " << error << std::endl;
+		  << "[[RUNFILES ERROR]]"
+		  << std::endl
+		  << "  "
+		  << error
+		  << std::endl;
 		std::exit(1);
 	}
 
 	bzlws_tool_lib::options options;
 
-	for(int i=0; args.size() > i; ++i) {
+	for(int i = 0; args.size() > i; ++i) {
 		auto next_arg = [&] {
-			if(i+1 > args.size()-1) {
+			if(i + 1 > args.size() - 1) {
 				std::cerr
-					<< "Argv access out of range at index " << i
-					<< " (improperly formatted) " << std::endl;
+				  << "Argv access out of range at index "
+				  << i
+				  << " (improperly formatted) "
+				  << std::endl;
 				tool_exit(exit_code::invalid_arguments);
 			}
 
@@ -604,18 +568,22 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 			auto param_file = next_arg();
 			if(!fs::exists(workspace_dir / param_file)) {
 				std::cerr
-					<< "[ERROR] Unable to read params file: " << param_file << std::endl;
+				  << "[ERROR] Unable to read params file: "
+				  << param_file
+				  << std::endl;
 				tool_exit(exit_code::filesystem_error);
 			}
 
 			std::ifstream param_file_stream(workspace_dir / param_file);
 
-			auto get_next_line = [&]{
+			auto get_next_line = [&] {
 				std::string next_line;
 				if(!std::getline(param_file_stream, next_line, '\n')) {
 					std::cerr
-						<< "Argv access out of range at index " << i
-						<< " (improperly formatted) " << std::endl;
+					  << "Argv access out of range at index "
+					  << i
+					  << " (improperly formatted) "
+					  << std::endl;
 					tool_exit(exit_code::invalid_arguments);
 				}
 				if(next_line.starts_with('\'') && next_line.ends_with('\'')) {
@@ -646,9 +614,9 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 		auto subst_values = get_bazel_info(subst_keys);
 		fs::current_path(curr_path);
 
-		for(size_t i=0; subst_keys.size() > i; ++i) {
+		for(size_t i = 0; subst_keys.size() > i; ++i) {
 			const auto& bazel_info_key = subst_keys[i];
-			const auto& value = subst_values[i];
+			const auto& value          = subst_values[i];
 			for(auto subst_key : options.bazel_info_subst_keys[bazel_info_key]) {
 				options.subst_values[subst_key].push_back(value);
 			}
@@ -658,27 +626,18 @@ bzlws_tool_lib::options bzlws_tool_lib::parse_args
 	return options;
 }
 
-bzlws_tool_lib::options bzlws_tool_lib::parse_argv
-	( const fs::path&  workspace_dir
-	, int              argc
-	, char**           argv
-	)
-{
+bzlws_tool_lib::options bzlws_tool_lib::parse_argv(const fs::path& workspace_dir, int argc, char** argv) {
 	std::vector<std::string> args;
-	for(int i=1; argc > i; ++i) {
+	for(int i = 1; argc > i; ++i) {
 		args.emplace_back(argv[i]);
 	}
 	return parse_args(workspace_dir, argv[0], args);
 }
 
-void bzlws_tool_lib::copy_with_substitutions
-	( const options& options
-	, const src_info& src_info
-	)
-{
+void bzlws_tool_lib::copy_with_substitutions(const options& options, const src_info& src_info) {
 	std::ifstream in_stream(src_info.src_path);
 	std::ofstream out_stream(src_info.new_src_path);
-	std::string line;
+	std::string   line;
 
 	while(!in_stream.eof()) {
 		std::getline(in_stream, line, '\n');
@@ -702,11 +661,7 @@ void bzlws_tool_lib::copy_with_substitutions
 	}
 }
 
-void bzlws_tool_lib::remove_previous_generated_files
-	( const fs::path&    workspace_dir
-	, const std::string  metafile_path
-	)
-{
+void bzlws_tool_lib::remove_previous_generated_files(const fs::path& workspace_dir, const std::string metafile_path) {
 	auto full_metafile_path = workspace_dir / metafile_path;
 	if(!fs::exists(full_metafile_path)) {
 		return;
@@ -720,19 +675,21 @@ void bzlws_tool_lib::remove_previous_generated_files
 		if(key == "files") {
 			const auto file_paths = field.second.as<std::vector<std::string>>();
 
-			auto remove_count = 0;
+			auto                  remove_count = 0;
 			std::vector<fs::path> dirs_to_check;
 			for(auto file_path : file_paths) {
 				std::error_code ec;
 				force_remove(file_path, ec);
 				if(ec) {
 					std::cerr
-						<< "[WARN] Failed to remove '" << file_path << "'" 
-						<< std::endl;
+					  << "[WARN] Failed to remove '"
+					  << file_path
+					  << "'"
+					  << std::endl;
 				} else {
 					remove_count += 1;
 					fs::path parent_dir = fs::path(file_path).parent_path();
-					if (parent_dir != workspace_dir) {
+					if(parent_dir != workspace_dir) {
 						dirs_to_check.push_back(parent_dir);
 					}
 				}
@@ -755,20 +712,19 @@ void bzlws_tool_lib::remove_previous_generated_files
 
 			if(remove_count > 0) {
 				std::cout
-					<< "Successfully removed " << remove_count << "/" << file_paths.size()
-					<< " existing files" << std::endl;
+				  << "Successfully removed "
+				  << remove_count
+				  << "/"
+				  << file_paths.size()
+				  << " existing files"
+				  << std::endl;
 			}
 		}
 	}
 }
 
-void bzlws_tool_lib::write_generated_metadata_file
-	( const fs::path&               workspace_dir
-	, const std::string             metafile_path
-	, const std::vector<src_info>&  srcs_info
-	)
-{
-	auto full_metafile_path = workspace_dir / metafile_path;
+void bzlws_tool_lib::write_generated_metadata_file(const fs::path& workspace_dir, const std::string metafile_path, const std::vector<src_info>& srcs_info) {
+	auto       full_metafile_path = workspace_dir / metafile_path;
 	YAML::Node metafile;
 
 	for(auto src : srcs_info) {
@@ -782,34 +738,31 @@ void bzlws_tool_lib::write_generated_metadata_file
 	output.close();
 }
 
-std::vector<std::string> bzlws_tool_lib::get_bazel_info
-	( const std::vector<std::string>& info_keys
-	)
-{	
+std::vector<std::string> bzlws_tool_lib::get_bazel_info(const std::vector<std::string>& info_keys) {
 	if(info_keys.empty()) {
 		return {};
 	}
 
-	std::string cmd = "bazel info";
+	std::string              cmd = "bazel info";
 	std::vector<std::string> key_values;
-	std::stringstream result;
+	std::stringstream        result;
 
 	for(const auto& key : info_keys) {
 		cmd += " " + key;
 	}
 
 	{
-		std::array<char, 512> stdout_buf;
+		std::array<char, 512>                    stdout_buf;
 		std::unique_ptr<FILE, decltype(&pclose)> pipe(
-			popen(cmd.c_str(), "r"),
-			pclose
+		  popen(cmd.c_str(), "r"),
+		  pclose
 		);
 
 		if(!pipe) {
 			throw std::runtime_error("get_bazel_info popen() failed!");
 		}
 
-		while (fgets(stdout_buf.data(), stdout_buf.size(), pipe.get()) != nullptr) {
+		while(fgets(stdout_buf.data(), stdout_buf.size(), pipe.get()) != nullptr) {
 			result << stdout_buf.data();
 		}
 	}
@@ -822,12 +775,12 @@ std::vector<std::string> bzlws_tool_lib::get_bazel_info
 			result.ignore(512, ':');
 		}
 
-	result.getline(key_value_buf.data(), key_value_buf.size(), '\n');
+		result.getline(key_value_buf.data(), key_value_buf.size(), '\n');
 		auto value_length = strlen(key_value_buf.data());
 
 		auto& key_value = key_values.emplace_back(
-			key_value_buf.data(),
-			value_length
+		  key_value_buf.data(),
+		  value_length
 		);
 
 		trim_ws(key_value);
@@ -838,39 +791,51 @@ std::vector<std::string> bzlws_tool_lib::get_bazel_info
 
 bool bzlws_tool_lib::files_are_identical(const fs::path& p1, const fs::path& p2) {
 	std::error_code ec;
-	if (fs::equivalent(p1, p2, ec)) return true;
-	if (!fs::exists(p1) || !fs::exists(p2)) return false;
-	if (fs::file_size(p1, ec) != fs::file_size(p2, ec)) return false;
-	
+	if(fs::equivalent(p1, p2, ec)) {
+		return true;
+	}
+	if(!fs::exists(p1) || !fs::exists(p2)) {
+		return false;
+	}
+	if(fs::file_size(p1, ec) != fs::file_size(p2, ec)) {
+		return false;
+	}
+
 	std::ifstream f1(p1, std::ifstream::binary | std::ifstream::ate);
 	std::ifstream f2(p2, std::ifstream::binary | std::ifstream::ate);
-	if (f1.fail() || f2.fail()) return false;
-	if (f1.tellg() != f2.tellg()) return false;
-	
+	if(f1.fail() || f2.fail()) {
+		return false;
+	}
+	if(f1.tellg() != f2.tellg()) {
+		return false;
+	}
+
 	f1.seekg(0, std::ifstream::beg);
 	f2.seekg(0, std::ifstream::beg);
-	return std::equal(std::istreambuf_iterator<char>(f1.rdbuf()),
-					  std::istreambuf_iterator<char>(),
-					  std::istreambuf_iterator<char>(f2.rdbuf()));
+	return std::equal(std::istreambuf_iterator<char>(f1.rdbuf()), std::istreambuf_iterator<char>(), std::istreambuf_iterator<char>(f2.rdbuf()));
 }
 
 fs::path bzlws_tool_lib::get_relative_path(const fs::path& path, const fs::path& base) {
 #if _WIN32
 	std::string path_str = path.generic_string();
 	std::string base_str = base.generic_string();
-	if (path_str.size() >= base_str.size()) {
+	if(path_str.size() >= base_str.size()) {
 		std::string path_prefix = path_str.substr(0, base_str.size());
-		bool match = true;
-		for (size_t i = 0; i < base_str.size(); ++i) {
-			if (std::tolower((unsigned char)path_prefix[i]) != std::tolower((unsigned char)base_str[i])) {
+		bool        match       = true;
+		for(size_t i = 0; i < base_str.size(); ++i) {
+			if(std::tolower((unsigned char)path_prefix[i]) != std::tolower((unsigned char)base_str[i])) {
 				match = false;
 				break;
 			}
 		}
-		if (match) {
+		if(match) {
 			auto rel = path_str.substr(base_str.size());
-			if (!rel.empty() && rel[0] == '/') rel = rel.substr(1);
-			if (rel.empty()) return ".";
+			if(!rel.empty() && rel[0] == '/') {
+				rel = rel.substr(1);
+			}
+			if(rel.empty()) {
+				return ".";
+			}
 			return rel;
 		}
 	}
@@ -879,116 +844,120 @@ fs::path bzlws_tool_lib::get_relative_path(const fs::path& path, const fs::path&
 }
 
 namespace {
-	struct tree_node {
-		std::string name;
-		std::string src_path;
-		std::map<std::string, tree_node> children;
-	};
+struct tree_node {
+	std::string                      name;
+	std::string                      src_path;
+	std::map<std::string, tree_node> children;
+};
 
-	void compress_tree(tree_node& node) {
-		for (auto& pair : node.children) {
-			compress_tree(pair.second);
-		}
-		if (node.src_path.empty() && node.children.size() == 1) {
-			auto child_it = node.children.begin();
-			if (node.name.empty()) {
-				node.name = child_it->second.name;
-			} else {
-				node.name = node.name + "/" + child_it->second.name;
-			}
-			node.src_path = std::move(child_it->second.src_path);
-			auto grandchildren = std::move(child_it->second.children);
-			node.children = std::move(grandchildren);
-		}
+void compress_tree(tree_node& node) {
+	for(auto& pair : node.children) {
+		compress_tree(pair.second);
 	}
-
-	std::vector<std::string> split_path(const std::string& path) {
-		std::vector<std::string> parts;
-		size_t start = 0;
-		while (start < path.length()) {
-			size_t end = path.find('/', start);
-			if (end == std::string::npos) {
-				parts.push_back(path.substr(start));
-				break;
-			}
-			if (end > start) {
-				parts.push_back(path.substr(start, end - start));
-			}
-			start = end + 1;
-		}
-		return parts;
-	}
-
-	int get_max_left_len(const tree_node& node, int current_prefix_len) {
-		int max_len = 0;
-		if (!node.src_path.empty()) {
-			max_len = current_prefix_len + node.name.length();
-		}
-		int child_prefix_len = current_prefix_len;
-		if (!node.name.empty()) {
-			child_prefix_len += 3;
-		}
-		for (const auto& pair : node.children) {
-			max_len = std::max(max_len, get_max_left_len(pair.second, child_prefix_len));
-		}
-		return max_len;
-	}
-
-	std::string grey(const std::string& s) {
-		return "\x1b[90m" + s + "\x1b[0m";
-	}
-
-	void print_tree_node(const tree_node& node, const std::string& prefix, int prefix_len, int max_left_len, bool is_last, bool is_root, const std::string& arrow) {
-		if (!node.name.empty()) {
-			std::string current_line = "";
-			std::string new_prefix = prefix;
-			int new_prefix_len = prefix_len;
-			if (!is_root) {
-				std::string branch = is_last ? " \xE2\x94\x94 " : " \xE2\x94\x9C ";
-				current_line += grey(prefix + branch) + node.name;
-				new_prefix += is_last ? "   " : " \xE2\x94\x82 ";
-				new_prefix_len += 3;
-			} else {
-				current_line += node.name;
-			}
-
-			if (!node.src_path.empty()) {
-				int display_len = prefix_len + (is_root ? 0 : 3) + node.name.length();
-				int padding = max_left_len - display_len + 2; 
-				if (padding < 2) padding = 2;
-				std::string pad_str(padding, ' ');
-				std::cout << current_line << pad_str << grey(arrow) << node.src_path << std::endl;
-			} else {
-				std::cout << current_line << std::endl;
-			}
-
-			int count = 0;
-			int total = node.children.size();
-			for (const auto& pair : node.children) {
-				count++;
-				print_tree_node(pair.second, new_prefix, new_prefix_len, max_left_len, count == total, false, arrow);
-			}
+	if(node.src_path.empty() && node.children.size() == 1) {
+		auto child_it = node.children.begin();
+		if(node.name.empty()) {
+			node.name = child_it->second.name;
 		} else {
-			int count = 0;
-			int total = node.children.size();
-			for (const auto& pair : node.children) {
-				count++;
-				print_tree_node(pair.second, "", 0, max_left_len, count == total, true, arrow);
-			}
+			node.name = node.name + "/" + child_it->second.name;
 		}
+		node.src_path      = std::move(child_it->second.src_path);
+		auto grandchildren = std::move(child_it->second.children);
+		node.children      = std::move(grandchildren);
 	}
 }
 
+std::vector<std::string> split_path(const std::string& path) {
+	std::vector<std::string> parts;
+	size_t                   start = 0;
+	while(start < path.length()) {
+		size_t end = path.find('/', start);
+		if(end == std::string::npos) {
+			parts.push_back(path.substr(start));
+			break;
+		}
+		if(end > start) {
+			parts.push_back(path.substr(start, end - start));
+		}
+		start = end + 1;
+	}
+	return parts;
+}
+
+int get_max_left_len(const tree_node& node, int current_prefix_len) {
+	int max_len = 0;
+	if(!node.src_path.empty()) {
+		max_len = current_prefix_len + node.name.length();
+	}
+	int child_prefix_len = current_prefix_len;
+	if(!node.name.empty()) {
+		child_prefix_len += 3;
+	}
+	for(const auto& pair : node.children) {
+		max_len = std::max(max_len, get_max_left_len(pair.second, child_prefix_len));
+	}
+	return max_len;
+}
+
+std::string grey(const std::string& s) {
+	return "\x1b[90m" + s + "\x1b[0m";
+}
+
+void print_tree_node(const tree_node& node, const std::string& prefix, int prefix_len, int max_left_len, bool is_last, bool is_root, const std::string& arrow) {
+	if(!node.name.empty()) {
+		std::string current_line   = "";
+		std::string new_prefix     = prefix;
+		int         new_prefix_len = prefix_len;
+		if(!is_root) {
+			std::string branch = is_last ? " \xE2\x94\x94 " : " \xE2\x94\x9C ";
+			current_line += grey(prefix + branch) + node.name;
+			new_prefix += is_last ? "   " : " \xE2\x94\x82 ";
+			new_prefix_len += 3;
+		} else {
+			current_line += node.name;
+		}
+
+		if(!node.src_path.empty()) {
+			int display_len = prefix_len + (is_root ? 0 : 3) + node.name.length();
+			int padding     = max_left_len - display_len + 2;
+			if(padding < 2) {
+				padding = 2;
+			}
+			std::string pad_str(padding, ' ');
+			std::cout << current_line << pad_str << grey(arrow) << node.src_path << std::endl;
+		} else {
+			std::cout << current_line << std::endl;
+		}
+
+		int count = 0;
+		int total = node.children.size();
+		for(const auto& pair : node.children) {
+			count++;
+			print_tree_node(pair.second, new_prefix, new_prefix_len, max_left_len, count == total, false, arrow);
+		}
+	} else {
+		int count = 0;
+		int total = node.children.size();
+		for(const auto& pair : node.children) {
+			count++;
+			print_tree_node(pair.second, "", 0, max_left_len, count == total, true, arrow);
+		}
+	}
+}
+} // namespace
+
 void bzlws_tool_lib::print_bzlws_tree(const std::vector<std::pair<std::string, std::string>>& items, const std::string& arrow) {
-	if (items.empty()) return;
+	if(items.empty()) {
+		return;
+	}
 	tree_node root;
-	for (const auto& item : items) {
-		auto parts = split_path(item.first);
-		tree_node* curr = &root;
-		for (size_t i = 0; i < parts.size(); ++i) {
-			curr = &curr->children[parts[i]];
+	for(const auto& item : items) {
+		auto       parts = split_path(item.first);
+		tree_node* curr  = &root;
+		for(size_t i = 0; i < parts.size(); ++i) {
+			curr       = &curr->children[parts[i]];
 			curr->name = parts[i];
-			if (i == parts.size() - 1) {
+			if(i == parts.size() - 1) {
 				curr->src_path = item.second;
 			}
 		}

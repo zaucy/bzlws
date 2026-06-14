@@ -1,9 +1,9 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
-int bzlws_extract
-	( const char*                      argv0
-	, const std::vector<std::string>&  args
-	);
+int bzlws_extract(
+  const char*                     argv0,
+  const std::vector<std::string>& args
+);

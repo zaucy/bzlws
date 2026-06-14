@@ -1,51 +1,41 @@
-#include <filesystem>
-#include <string>
 #include <array>
-#include <vector>
-#include <iostream>
+#include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <map>
 #include <set>
+#include <string>
+#include <vector>
 
-std::string escaped_string
-	( const std::string& str
-	)
-{
+std::string escaped_string(const std::string& str) {
 	return "R\"______(" + str + ")______\"";
 }
 
 template<typename Fn>
-void for_each_status_item
-  ( std::string  status_file_path
-  , Fn&&         fn
-  )
-{
-  std::string line;
-  std::string::size_type ws_idx;
+void for_each_status_item(std::string status_file_path, Fn&& fn) {
+	std::string            line;
+	std::string::size_type ws_idx;
 
 	std::ifstream status_file_stream(status_file_path);
 
-  // Reading file based on:
-  // https://docs.bazel.build/versions/master/user-manual.html#workspace_status
-  while(status_file_stream.good()) {
-    line.clear();
-    std::getline(status_file_stream, line);
-    if(line.empty()) continue;
+	// Reading file based on:
+	// https://docs.bazel.build/versions/master/user-manual.html#workspace_status
+	while(status_file_stream.good()) {
+		line.clear();
+		std::getline(status_file_stream, line);
+		if(line.empty()) {
+			continue;
+		}
 
-    ws_idx = line.find_first_of(' ');
+		ws_idx = line.find_first_of(' ');
 
 		fn(line.substr(0, ws_idx), line.substr(ws_idx + 1));
-  }
+	}
 }
 
-static void substr_str
-	( std::string&        str
-	, const std::string&  subst_id
-	, const std::string&  subst_value
-	)
-{
-	const auto subst_id_len = subst_id.length();
-	auto substr_id_idx = str.find(subst_id);
+static void substr_str(std::string& str, const std::string& subst_id, const std::string& subst_value) {
+	const auto subst_id_len  = subst_id.length();
+	auto       substr_id_idx = str.find(subst_id);
 	while(substr_id_idx != std::string::npos) {
 		str.replace(substr_id_idx, subst_id_len, subst_value);
 		substr_id_idx = str.find(subst_id);
@@ -53,53 +43,44 @@ static void substr_str
 }
 
 int main(int argc, char* argv[]) {
-	std::string generated_script_path;
-	std::string tool;
-	std::vector<std::string> forwarded_args;
+	std::string                             generated_script_path;
+	std::string                             tool;
+	std::vector<std::string>                forwarded_args;
 	std::vector<std::array<std::string, 2>> paths;
-	std::string out_path;
+	std::string                             out_path;
 
 	std::map<std::string, std::string> stamp_subst_map;
-	std::set<std::string> stamp_subst_used;
-	std::string stable_status_file_path;
-	std::string volatile_status_file_path;
+	std::set<std::string>              stamp_subst_used;
+	std::string                        stable_status_file_path;
+	std::string                        volatile_status_file_path;
 
-	for(int i=1; argc-1 > i; ++i) {
+	for(int i = 1; argc - 1 > i; ++i) {
 		auto arg = std::string(argv[i]);
 
 		if(arg == "--generated_script_path") {
 			generated_script_path = std::string(argv[++i]);
-		} else
-		if(arg == "--output") {
+		} else if(arg == "--output") {
 			out_path = std::string(argv[++i]);
-		} else
-		if(arg == "--tool") {
+		} else if(arg == "--tool") {
 			tool = std::string(argv[++i]);
-		} else
-		if(arg == "--stamp_subst") {
-			auto key = argv[++i];
-			auto value = argv[++i];
+		} else if(arg == "--stamp_subst") {
+			auto key             = argv[++i];
+			auto value           = argv[++i];
 			stamp_subst_map[key] = value;
-		} else
-		if(arg == "--stable_status") {
+		} else if(arg == "--stable_status") {
 			stable_status_file_path = argv[++i];
-		} else
-		if(arg == "--volatile_status") {
+		} else if(arg == "--volatile_status") {
 			volatile_status_file_path = argv[++i];
-		} else
-		if(arg == "--force") {
+		} else if(arg == "--force") {
 			forwarded_args.push_back(arg);
-		} else
-		if(arg == "--params_file") {
+		} else if(arg == "--params_file") {
 			forwarded_args.push_back(arg);
 			forwarded_args.push_back(argv[++i]);
-		} else
-		if(arg == "--bazel_info_subst") {
+		} else if(arg == "--bazel_info_subst") {
 			forwarded_args.push_back(arg);
 			forwarded_args.push_back(argv[++i]);
 			forwarded_args.push_back(argv[++i]);
-		} else
-		if(arg == "--metafile_out") {
+		} else if(arg == "--metafile_out") {
 			forwarded_args.push_back(arg);
 			forwarded_args.push_back(argv[++i]);
 		} else {
@@ -171,11 +152,15 @@ int main(int argc, char* argv[]) {
 	std::ofstream out(generated_script_path);
 
 	out
-		<< "#include <string>\n"
-		<< "#include <vector>\n"
-		<< "#include \"tools/" << tool << "/" << tool << ".hh\"\n"
-		<< "int main(int argc, char* argv[]) {\n"
-		<< "\tstd::vector<std::string> args;\n";
+	  << "#include <string>\n"
+	  << "#include <vector>\n"
+	  << "#include \"tools/"
+	  << tool
+	  << "/"
+	  << tool
+	  << ".hh\"\n"
+	  << "int main(int argc, char* argv[]) {\n"
+	  << "\tstd::vector<std::string> args;\n";
 
 	for(const auto& forwarded_arg : forwarded_args) {
 		out << "\targs.emplace_back(" << escaped_string(forwarded_arg) << ");\n";
@@ -187,16 +172,18 @@ int main(int argc, char* argv[]) {
 		out << "\targs.emplace_back(" << escaped_string(target_str) << ");\n";
 
 		out
-			<< "\targs.emplace_back(std::filesystem::path("
-			<< path_var_name << ").make_preferred().string());\n";
+		  << "\targs.emplace_back(std::filesystem::path("
+		  << path_var_name
+		  << ").make_preferred().string());\n";
 
 		idx += 1;
 	}
 
 	out
-		<< "\treturn " << tool << "(argv[0], args);\n"
-		<< "}\n";
-
+	  << "\treturn "
+	  << tool
+	  << "(argv[0], args);\n"
+	  << "}\n";
 
 	return 0;
 }

@@ -1,19 +1,13 @@
-#include <cstdlib>
-#include <string>
-#include <iostream>
-#include <exception>
 #include "tools/bzlws_tool_lib/bzlws_tool_lib.hh"
 
-static void copy_files
-	( const std::filesystem::path&    workspace_dir
-	, const bzlws_tool_lib::options&  options
-	);
+#include <cstdlib>
+#include <exception>
+#include <iostream>
+#include <string>
 
-int bzlws_copy
-	( const char*                      argv0
-	, const std::vector<std::string>&  args
-	)
-{
+static void copy_files(const std::filesystem::path& workspace_dir, const bzlws_tool_lib::options& options);
+
+int bzlws_copy(const char* argv0, const std::vector<std::string>& args) {
 	using namespace bzlws_tool_lib;
 
 	std::set_terminate([] {
@@ -30,8 +24,8 @@ int bzlws_copy
 	});
 
 	auto workspace_dir = get_build_workspace_dir();
-	auto bzlignore = parse_bazelignore(workspace_dir);
-	auto options = parse_args(workspace_dir, argv0, args);
+	auto bzlignore     = parse_bazelignore(workspace_dir);
+	auto options       = parse_args(workspace_dir, argv0, args);
 
 	for(const auto& info : options.srcs_info) {
 		bzlignore.assert_ignored_path(info.new_src_path);
@@ -39,8 +33,8 @@ int bzlws_copy
 
 	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::remove_previous_generated_files(
-			workspace_dir,
-			options.metafile_path
+		  workspace_dir,
+		  options.metafile_path
 		);
 	}
 
@@ -48,9 +42,9 @@ int bzlws_copy
 
 	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::write_generated_metadata_file(
-			workspace_dir,
-			options.metafile_path,
-			options.srcs_info
+		  workspace_dir,
+		  options.metafile_path,
+		  options.srcs_info
 		);
 	}
 
@@ -69,24 +63,20 @@ int bzlws_copy
 	return 0;
 }
 
-void copy_files
-	( const std::filesystem::path&    workspace_dir
-	, const bzlws_tool_lib::options&  options
-	)
-{
+void copy_files(const std::filesystem::path& workspace_dir, const bzlws_tool_lib::options& options) {
 	using namespace bzlws_tool_lib;
-	std::map<fs::path, fs::path> written_paths;
+	std::map<fs::path, fs::path>                     written_paths;
 	std::vector<std::pair<std::string, std::string>> print_items;
 
 	for(const auto& info : options.srcs_info) {
-		const auto& src_path = info.src_path;
+		const auto& src_path     = info.src_path;
 		const auto& new_src_path = info.new_src_path;
 
 		std::error_code ec;
 
 		auto it = written_paths.find(new_src_path);
-		if (it != written_paths.end()) {
-			if (!files_are_identical(it->second, src_path)) {
+		if(it != written_paths.end()) {
+			if(!files_are_identical(it->second, src_path)) {
 				std::cerr << "[ERROR] Conflict: Trying to write different files to the same output location: " << new_src_path.generic_string() << std::endl;
 				std::exit(1);
 			}
@@ -98,8 +88,11 @@ void copy_files
 			force_remove(new_src_path, ec);
 			if(ec) {
 				std::cerr
-					<< "Unable to remove \"" << new_src_path.generic_string() << "\" - "
-					<< ec.message() << std::endl;
+				  << "Unable to remove \""
+				  << new_src_path.generic_string()
+				  << "\" - "
+				  << ec.message()
+				  << std::endl;
 				std::exit(1);
 			}
 		}
@@ -109,19 +102,20 @@ void copy_files
 			fs::create_directories(out_dir);
 		}
 
-		print_items.push_back({
-			get_relative_path(new_src_path, workspace_dir).generic_string(),
-			get_relative_path(src_path, workspace_dir).generic_string()
-		});
+		print_items.push_back({get_relative_path(new_src_path, workspace_dir).generic_string(), get_relative_path(src_path, workspace_dir).generic_string()});
 
 		if(options.subst_values.empty()) {
 			fs::copy_file(src_path, new_src_path, ec);
 
 			if(ec) {
 				std::cerr
-					<< "[ERROR] Failed to copy " << src_path.generic_string() << " -> "
-					<< new_src_path.generic_string() << std::endl << ec.message()
-					<< std::endl;
+				  << "[ERROR] Failed to copy "
+				  << src_path.generic_string()
+				  << " -> "
+				  << new_src_path.generic_string()
+				  << std::endl
+				  << ec.message()
+				  << std::endl;
 				std::exit(1);
 			}
 		} else {
