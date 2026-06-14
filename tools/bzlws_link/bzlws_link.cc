@@ -79,7 +79,12 @@ int bzlws_link
 			<< get_relative_path(new_src_path, workspace_dir).generic_string()
 			<< std::endl;
 
-		fs::create_symlink(src_path, new_src_path, ec);
+		fs::path absolute_src_path = src_path;
+		if (!absolute_src_path.is_absolute()) {
+			absolute_src_path = workspace_dir / absolute_src_path;
+		}
+
+		fs::create_symlink(absolute_src_path, new_src_path, ec);
 		if(ec) {
 			std::cerr
 				<< "[ERROR] Failed to create symlink "
