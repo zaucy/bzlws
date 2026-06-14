@@ -877,3 +877,125 @@ fs::path bzlws_tool_lib::get_relative_path(const fs::path& path, const fs::path&
 #endif
 	return fs::relative(path, base);
 }
+
+namespace {
+	struct tree_node {
+		std::string name;
+		std::string src_path;
+		std::map<std::string, tree_node> children;
+	};
+
+	void compress_tree(tree_node& node) {
+		for (auto& pair : node.children) {
+			compress_tree(pair.second);
+		}
+		if (node.src_path.empty() && node.children.size() == 1) {
+			auto child_it = node.children.begin();
+			if (node.name.empty()) {
+				node.name = child_it->second.name;
+			} else {
+				node.name = node.name + "/" + child_it->second.name;
+			}
+			node.src_path = std::move(child_it->second.src_path);
+			auto grandchildren = std::move(child_it->second.children);
+			node.children = std::move(grandchildren);
+		}
+	}
+
+	std::vector<std::string> split_path(const std::string& path) {
+		std::vector<std::string> parts;
+		size_t start = 0;
+		while (start < path.length()) {
+			size_t end = path.find('/', start);
+			if (end == std::string::npos) {
+				parts.push_back(path.substr(start));
+				break;
+			}
+			if (end > start) {
+				parts.push_back(path.substr(start, end - start));
+			}
+			start = end + 1;
+		}
+		return parts;
+	}
+
+	int get_max_left_len(const tree_node& node, int current_prefix_len) {
+		int max_len = 0;
+		if (!node.src_path.empty()) {
+			max_len = current_prefix_len + node.name.length();
+		}
+		int child_prefix_len = current_prefix_len;
+		if (!node.name.empty()) {
+			child_prefix_len += 3;
+		}
+		for (const auto& pair : node.children) {
+			max_len = std::max(max_len, get_max_left_len(pair.second, child_prefix_len));
+		}
+		return max_len;
+	}
+
+	std::string grey(const std::string& s) {
+		return "\x1b[90m" + s + "\x1b[0m";
+	}
+
+	void print_tree_node(const tree_node& node, const std::string& prefix, int prefix_len, int max_left_len, bool is_last, bool is_root, const std::string& arrow) {
+		if (!node.name.empty()) {
+			std::string current_line = "";
+			std::string new_prefix = prefix;
+			int new_prefix_len = prefix_len;
+			if (!is_root) {
+				std::string branch = is_last ? " \xE2\x94\x94 " : " \xE2\x94\x9C ";
+				current_line += grey(prefix + branch) + node.name;
+				new_prefix += is_last ? "   " : " \xE2\x94\x82 ";
+				new_prefix_len += 3;
+			} else {
+				current_line += node.name;
+			}
+
+			if (!node.src_path.empty()) {
+				int display_len = prefix_len + (is_root ? 0 : 3) + node.name.length();
+				int padding = max_left_len - display_len + 2; 
+				if (padding < 2) padding = 2;
+				std::string pad_str(padding, ' ');
+				std::cout << current_line << pad_str << grey(arrow) << node.src_path << std::endl;
+			} else {
+				std::cout << current_line << std::endl;
+			}
+
+			int count = 0;
+			int total = node.children.size();
+			for (const auto& pair : node.children) {
+				count++;
+				print_tree_node(pair.second, new_prefix, new_prefix_len, max_left_len, count == total, false, arrow);
+			}
+		} else {
+			int count = 0;
+			int total = node.children.size();
+			for (const auto& pair : node.children) {
+				count++;
+				print_tree_node(pair.second, "", 0, max_left_len, count == total, true, arrow);
+			}
+		}
+	}
+}
+
+void bzlws_tool_lib::print_bzlws_tree(const std::vector<std::pair<std::string, std::string>>& items, const std::string& arrow) {
+	if (items.empty()) return;
+	tree_node root;
+	for (const auto& item : items) {
+		auto parts = split_path(item.first);
+		tree_node* curr = &root;
+		for (size_t i = 0; i < parts.size(); ++i) {
+			curr = &curr->children[parts[i]];
+			curr->name = parts[i];
+			if (i == parts.size() - 1) {
+				curr->src_path = item.second;
+			}
+		}
+	}
+
+	compress_tree(root);
+
+	int max_left_len = get_max_left_len(root, 0);
+	print_tree_node(root, "", 0, max_left_len, true, true, arrow);
+}
