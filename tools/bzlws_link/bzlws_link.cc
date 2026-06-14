@@ -57,6 +57,11 @@ int bzlws_link
 			}
 		}
 
+		auto out_dir = new_src_path.parent_path();
+		if(!fs::exists(out_dir)) {
+			fs::create_directories(out_dir);
+		}
+
 		std::cout
 			<< src_path.generic_string() << " <-> "
 			<< fs::relative(new_src_path.string(), workspace_dir).generic_string()

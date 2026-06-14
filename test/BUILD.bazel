@@ -107,3 +107,44 @@ bzlws_copy(
     out = "ignored_folder/{BUILD_HOST}/{BUILD_USER}/{FILENAME}",
     force = True,
 )
+
+bzlws_copy(
+    name = "remap_paths_example",
+    srcs = ["exampledir/example.txt"],
+    out = "ignored_folder/{FILEPATH}",
+    remap_paths = {
+        "exampledir/": "remapped_dir/",
+    },
+    force = True,
+)
+
+bzlws_link(
+    name = "link_remap_paths_example",
+    srcs = ["exampledir/example.txt"],
+    out = "ignored_folder/{FILEPATH}",
+    remap_paths = {
+        "exampledir/": "link_remapped_dir/",
+    },
+    force = True,
+)
+
+filegroup(
+    name = "exampledir_files",
+    srcs = ["exampledir/example.txt", "info.txt"],
+)
+
+bzlws_copy(
+    name = "excludes_example",
+    srcs = [":exampledir_files"],
+    excludes = ["info.txt"],
+    out = "ignored_folder/{FILEPATH}",
+    force = True,
+)
+
+bzlws_link(
+    name = "link_excludes_example",
+    srcs = [":exampledir_files"],
+    excludes = ["info.txt"],
+    out = "ignored_folder/link_excludes_{FILENAME}",
+    force = True,
+)

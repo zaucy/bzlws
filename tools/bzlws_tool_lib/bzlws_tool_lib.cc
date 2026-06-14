@@ -85,8 +85,13 @@ bool bzlws_tool_lib::force_remove
 	, std::error_code& ec
 	) noexcept
 {
-	fs::permissions(path, fs::perms::others_write, ec);
-	if(ec) return false;
+	fs::permissions(path, 
+		fs::perms::owner_write | fs::perms::group_write | fs::perms::others_write, 
+		fs::perm_options::add, ec);
+	if(ec) {
+		// Ignore permission change errors, try to remove anyway
+		ec.clear();
+	}
 
 	return fs::remove(path, ec);
 }
@@ -249,6 +254,7 @@ fs::path bzlws_tool_lib::get_src_out_path
 	, std::string      bzl_file_path
 	, bool             force
 	, std::string      strip_filepath_prefix
+	, const std::vector<std::pair<std::string, std::string>>& remap_paths
 	, std::string      target_os
 	, std::string      target_cpu
 	)
@@ -301,6 +307,46 @@ fs::path bzlws_tool_lib::get_src_out_path
 		if(filepath.rfind(strip_filepath_prefix, 0) == 0) {
 			filepath = filepath.substr(strip_filepath_prefix.length());
 		}
+	}
+
+	std::string longest_matched_prefix = "";
+	std::string replacement_for_longest_match = "";
+	bool found_match = false;
+
+	for(const auto& remap : remap_paths) {
+		std::string prefix = remap.first;
+		std::string replacement = remap.second;
+
+		substr_str(prefix, "\\", "/");
+		substr_str(replacement, "\\", "/");
+
+		substr_str(prefix, "{TARGET_OS}", target_os);
+		substr_str(prefix, "{TARGET_CPU}", target_cpu);
+		substr_str(prefix, "{BAZEL_LABEL_NAME}", label.name);
+		substr_str(prefix, "{BAZEL_LABEL_PACKAGE}", label.package);
+		substr_str(prefix, "{BAZEL_LABEL_WORKSPACE_NAME}", label.workspace_name);
+		substr_str(prefix, "{BAZEL_FULL_LABEL}", label.workspace_name + "/" + label.package + "/" + label.name);
+		substr_str(prefix, "{BAZEL_LABEL}", label.package + "/" + label.name);
+
+		substr_str(replacement, "{TARGET_OS}", target_os);
+		substr_str(replacement, "{TARGET_CPU}", target_cpu);
+		substr_str(replacement, "{BAZEL_LABEL_NAME}", label.name);
+		substr_str(replacement, "{BAZEL_LABEL_PACKAGE}", label.package);
+		substr_str(replacement, "{BAZEL_LABEL_WORKSPACE_NAME}", label.workspace_name);
+		substr_str(replacement, "{BAZEL_FULL_LABEL}", label.workspace_name + "/" + label.package + "/" + label.name);
+		substr_str(replacement, "{BAZEL_LABEL}", label.package + "/" + label.name);
+
+		if(filepath.rfind(prefix, 0) == 0) {
+			if (!found_match || prefix.length() > longest_matched_prefix.length()) {
+				found_match = true;
+				longest_matched_prefix = prefix;
+				replacement_for_longest_match = replacement;
+			}
+		}
+	}
+
+	if(found_match) {
+		filepath = replacement_for_longest_match + filepath.substr(longest_matched_prefix.length());
 	}
 
 	substr_str(out_dir_input, "{BAZEL_LABEL_NAME}", label.name);
@@ -363,6 +409,13 @@ static void parse_arg
 	if(arg == "--strip_filepath_prefix") {
 		options.strip_filepath_prefix = next_arg();
 		bzlws_tool_lib::substr_str(options.strip_filepath_prefix, "\\", "/");
+		return;
+	}
+
+	if(arg == "--remap_path") {
+		auto prefix = next_arg();
+		auto replacement = next_arg();
+		options.remap_paths.push_back({prefix, replacement});
 		return;
 	}
 
@@ -479,6 +532,7 @@ static void parse_arg
 				bzl_file_path,
 				options.force,
 				options.strip_filepath_prefix,
+				options.remap_paths,
 				target_os,
 				target_cpu
 			);
@@ -503,6 +557,7 @@ static void parse_arg
 			potential_src_path,
 			options.force,
 			options.strip_filepath_prefix,
+			options.remap_paths,
 			target_os,
 			target_cpu
 		);
@@ -666,6 +721,7 @@ void bzlws_tool_lib::remove_previous_generated_files
 			const auto file_paths = field.second.as<std::vector<std::string>>();
 
 			auto remove_count = 0;
+			std::vector<fs::path> dirs_to_check;
 			for(auto file_path : file_paths) {
 				std::error_code ec;
 				force_remove(file_path, ec);
@@ -675,6 +731,25 @@ void bzlws_tool_lib::remove_previous_generated_files
 						<< std::endl;
 				} else {
 					remove_count += 1;
+					fs::path parent_dir = fs::path(file_path).parent_path();
+					if (parent_dir != workspace_dir) {
+						dirs_to_check.push_back(parent_dir);
+					}
+				}
+			}
+
+			for(auto dir : dirs_to_check) {
+				while(dir != workspace_dir) {
+					std::error_code ec;
+					if(!fs::exists(dir, ec) || !fs::is_directory(dir, ec)) {
+						break;
+					}
+					std::error_code rm_ec;
+					fs::remove(dir, rm_ec);
+					if(rm_ec) {
+						break;
+					}
+					dir = dir.parent_path();
 				}
 			}
 

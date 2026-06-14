@@ -1,7 +1,7 @@
 load("//rules/private:bzlws_tool_cc_binary.bzl", "bzlws_tool_cc_binary")
 load("//rules/private:bzlws_util.bzl", "bzlws_check_common_required_attrs")
 
-def bzlws_copy(name = None, srcs = None, out = None, force = None, include_runfiles = False, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, tags = [], **kwargs):
+def bzlws_copy(name = None, srcs = None, excludes = [], out = None, force = None, include_runfiles = False, strip_filepath_prefix = "", remap_paths = {}, metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, tags = [], **kwargs):
     """Copy generated files into workspace directory
 
     ```python
@@ -12,6 +12,9 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, include_runfi
         name: Name used for executable target
 
         srcs: List of files that should be copied
+
+        excludes: Files to exclude from the output directory. Each element must
+            refer to an individual file in src. All exclusions must be used.
 
         out: Output path within the workspace. Certain strings get replaced with
             workspace status values and information about the `srcs`. This
@@ -68,6 +71,13 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, include_runfi
 
         metafile_path: Path to metafile
 
+        remap_paths: Dictionary mapping path prefixes to replacements. When
+            `{FILEPATH}` is used in `out`, any filepath that starts with a key
+            in this dictionary will have that prefix replaced with the
+            corresponding value. For example,
+            `{"src/zcpx": "", "external/bimg": "tools"}` would strip the
+            `src/zcpx` prefix and remap `external/bimg` to `tools`.
+
         substitutions: BzlwsInfo label keyed, string valued, dictionary. The
             values will be replaced in the source files with the values from the
             `bazel info` command. The available BzlwsInfo targets are in the
@@ -88,8 +98,10 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, include_runfi
     bzlws_tool_cc_binary(
         name = name,
         srcs = srcs,
+        excludes = excludes,
         out = out,
         strip_filepath_prefix = strip_filepath_prefix,
+        remap_paths = remap_paths,
         force = force,
         include_runfiles = include_runfiles,
         metafile_path = metafile_path,

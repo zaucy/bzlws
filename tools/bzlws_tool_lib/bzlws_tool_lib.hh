@@ -51,6 +51,7 @@ namespace bzlws_tool_lib {
 		std::string default_target_cpu;
 		std::string platform_manifest_path;
 		std::map<std::string, std::pair<std::string, std::string>> platform_manifest;
+		std::vector<std::pair<std::string, std::string>> remap_paths;
 	};
 
 	options parse_argv
@@ -93,6 +94,7 @@ namespace bzlws_tool_lib {
 		, std::string      bzl_file_path
 		, bool             force
 		, std::string      strip_filepath_prefix
+		, const std::vector<std::pair<std::string, std::string>>& remap_paths
 		, std::string      target_os
 		, std::string      target_cpu
 		);

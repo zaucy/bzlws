@@ -1,13 +1,16 @@
 load("//rules/private:bzlws_tool_cc_binary.bzl", "bzlws_tool_cc_binary")
 load("//rules/private:bzlws_util.bzl", "bzlws_check_common_required_attrs")
 
-def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", visibility = None, **kwargs):
+def bzlws_link(name = None, srcs = None, excludes = [], out = None, force = None, strip_filepath_prefix = "", remap_paths = {}, metafile_path = "", visibility = None, **kwargs):
     """ Symlink generated files into workspace directory
 
     Args:
         name: Name used for executable target
 
         srcs: List of files that should be symlinked
+
+        excludes: Files to exclude from the output directory. Each element must
+            refer to an individual file in src. All exclusions must be used.
 
         out: Output path within the workspace. Certain strings get replaced with
             workspace status values and information about the `srcs`. This
@@ -61,6 +64,13 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
 
         metafile_path: Path to metafile
 
+        remap_paths: Dictionary mapping path prefixes to replacements. When
+            `{FILEPATH}` is used in `out`, any filepath that starts with a key
+            in this dictionary will have that prefix replaced with the
+            corresponding value. For example,
+            `{"src/zcpx": "", "external/bimg": "tools"}` would strip the
+            `src/zcpx` prefix and remap `external/bimg` to `tools`.
+
         visibility: visibility of the executable target
 
         **kwargs: rest of arguments get passed to underlying targets
@@ -70,8 +80,10 @@ def bzlws_link(name = None, srcs = None, out = None, force = None, strip_filepat
     bzlws_tool_cc_binary(
         name = name,
         srcs = srcs,
+        excludes = excludes,
         out = out,
         strip_filepath_prefix = strip_filepath_prefix,
+        remap_paths = remap_paths,
         force = force,
         metafile_path = metafile_path,
         tool = "bzlws_link",
