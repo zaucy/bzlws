@@ -118,4 +118,14 @@ namespace bzlws_tool_lib {
 	void trim_ws
 		( std::string& str
 		);
+
+	bool files_are_identical
+		( const fs::path& p1
+		, const fs::path& p2
+		);
+
+	fs::path get_relative_path
+		( const fs::path& path
+		, const fs::path& base
+		);
 }

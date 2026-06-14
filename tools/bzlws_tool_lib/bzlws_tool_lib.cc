@@ -822,7 +822,7 @@ std::vector<std::string> bzlws_tool_lib::get_bazel_info
 			result.ignore(512, ':');
 		}
 
-		result.getline(key_value_buf.data(), key_value_buf.size(), '\n');
+	result.getline(key_value_buf.data(), key_value_buf.size(), '\n');
 		auto value_length = strlen(key_value_buf.data());
 
 		auto& key_value = key_values.emplace_back(
@@ -834,4 +834,46 @@ std::vector<std::string> bzlws_tool_lib::get_bazel_info
 	}
 
 	return key_values;
+}
+
+bool bzlws_tool_lib::files_are_identical(const fs::path& p1, const fs::path& p2) {
+	std::error_code ec;
+	if (fs::equivalent(p1, p2, ec)) return true;
+	if (!fs::exists(p1) || !fs::exists(p2)) return false;
+	if (fs::file_size(p1, ec) != fs::file_size(p2, ec)) return false;
+	
+	std::ifstream f1(p1, std::ifstream::binary | std::ifstream::ate);
+	std::ifstream f2(p2, std::ifstream::binary | std::ifstream::ate);
+	if (f1.fail() || f2.fail()) return false;
+	if (f1.tellg() != f2.tellg()) return false;
+	
+	f1.seekg(0, std::ifstream::beg);
+	f2.seekg(0, std::ifstream::beg);
+	return std::equal(std::istreambuf_iterator<char>(f1.rdbuf()),
+					  std::istreambuf_iterator<char>(),
+					  std::istreambuf_iterator<char>(f2.rdbuf()));
+}
+
+fs::path bzlws_tool_lib::get_relative_path(const fs::path& path, const fs::path& base) {
+#if _WIN32
+	std::string path_str = path.generic_string();
+	std::string base_str = base.generic_string();
+	if (path_str.size() >= base_str.size()) {
+		std::string path_prefix = path_str.substr(0, base_str.size());
+		bool match = true;
+		for (size_t i = 0; i < base_str.size(); ++i) {
+			if (std::tolower((unsigned char)path_prefix[i]) != std::tolower((unsigned char)base_str[i])) {
+				match = false;
+				break;
+			}
+		}
+		if (match) {
+			auto rel = path_str.substr(base_str.size());
+			if (!rel.empty() && rel[0] == '/') rel = rel.substr(1);
+			if (rel.empty()) return ".";
+			return rel;
+		}
+	}
+#endif
+	return fs::relative(path, base);
 }

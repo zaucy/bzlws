@@ -75,12 +75,23 @@ void copy_files
 	)
 {
 	using namespace bzlws_tool_lib;
+	std::map<fs::path, fs::path> written_paths;
 
 	for(const auto& info : options.srcs_info) {
 		const auto& src_path = info.src_path;
 		const auto& new_src_path = info.new_src_path;
 
 		std::error_code ec;
+
+		auto it = written_paths.find(new_src_path);
+		if (it != written_paths.end()) {
+			if (!files_are_identical(it->second, src_path)) {
+				std::cerr << "[ERROR] Conflict: Trying to write different files to the same output location: " << new_src_path.generic_string() << std::endl;
+				std::exit(1);
+			}
+			continue;
+		}
+		written_paths[new_src_path] = src_path;
 
 		if(fs::exists(new_src_path)) {
 			force_remove(new_src_path, ec);
@@ -98,8 +109,8 @@ void copy_files
 		}
 
 		std::cout
-			<< src_path.generic_string() << " -> "
-			<< fs::relative(new_src_path.string(), workspace_dir).generic_string()
+			<< get_relative_path(src_path, workspace_dir).generic_string() << " -> "
+			<< get_relative_path(new_src_path, workspace_dir).generic_string()
 			<< std::endl;
 
 		if(options.subst_values.empty()) {
