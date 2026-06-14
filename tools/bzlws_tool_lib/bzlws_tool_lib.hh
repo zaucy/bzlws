@@ -128,4 +128,8 @@ namespace bzlws_tool_lib {
 		( const fs::path& path
 		, const fs::path& base
 		);
+
+	void print_bzlws_tree
+		( const std::vector<std::pair<std::string, std::string>>& items
+		);
 }

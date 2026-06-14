@@ -76,6 +76,7 @@ void copy_files
 {
 	using namespace bzlws_tool_lib;
 	std::map<fs::path, fs::path> written_paths;
+	std::vector<std::pair<std::string, std::string>> print_items;
 
 	for(const auto& info : options.srcs_info) {
 		const auto& src_path = info.src_path;
@@ -108,10 +109,10 @@ void copy_files
 			fs::create_directories(out_dir);
 		}
 
-		std::cout
-			<< get_relative_path(src_path, workspace_dir).generic_string() << " -> "
-			<< get_relative_path(new_src_path, workspace_dir).generic_string()
-			<< std::endl;
+		print_items.push_back({
+			get_relative_path(new_src_path, workspace_dir).generic_string(),
+			get_relative_path(src_path, workspace_dir).generic_string()
+		});
 
 		if(options.subst_values.empty()) {
 			fs::copy_file(src_path, new_src_path, ec);
@@ -127,4 +128,6 @@ void copy_files
 			bzlws_tool_lib::copy_with_substitutions(options, info);
 		}
 	}
+
+	print_bzlws_tree(print_items);
 }

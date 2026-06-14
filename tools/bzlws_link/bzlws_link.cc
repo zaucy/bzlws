@@ -25,6 +25,7 @@ int bzlws_link
 	}
 
 	std::map<fs::path, fs::path> written_paths;
+	std::vector<std::pair<std::string, std::string>> print_items;
 
 	for(const auto& info : options.srcs_info) {
 		const auto& src_path = info.src_path;
@@ -74,10 +75,10 @@ int bzlws_link
 			fs::create_directories(out_dir);
 		}
 
-		std::cout
-			<< get_relative_path(src_path, workspace_dir).generic_string() << " <-> "
-			<< get_relative_path(new_src_path, workspace_dir).generic_string()
-			<< std::endl;
+		print_items.push_back({
+			get_relative_path(new_src_path, workspace_dir).generic_string(),
+			get_relative_path(src_path, workspace_dir).generic_string()
+		});
 
 		fs::path absolute_src_path = src_path;
 		if (!absolute_src_path.is_absolute()) {
@@ -94,6 +95,8 @@ int bzlws_link
 			std::exit(1);
 		}
 	}
+
+	print_bzlws_tree(print_items);
 
 	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::write_generated_metadata_file(
