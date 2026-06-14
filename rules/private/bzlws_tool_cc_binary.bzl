@@ -63,6 +63,9 @@ def _bzlws_tool_cc_binary(ctx):
     if ctx.attr.strip_filepath_prefix:
         args.add("--strip_filepath_prefix", ctx.attr.strip_filepath_prefix)
 
+    for prefix, replacement in ctx.attr.remap_paths.items():
+        args.add_all(["--remap_path", prefix, replacement])
+
     for key in ctx.attr.substitutions:
         value = ctx.attr.substitutions[key]
         args.add_all(["--bazel_info_subst", key[BzlwsInfo].name, value])
@@ -100,8 +103,14 @@ def _bzlws_tool_cc_binary(ctx):
 
     # Collect all files to process (direct srcs + optionally runfiles)
     all_src_files = list(ctx.files.srcs)
+    excluded_paths = {f.path: f for f in ctx.files.excludes}
+    used_exclusions = {}
+
     all_src_labels = []
     for src_file in ctx.files.srcs:
+        if src_file.path in excluded_paths:
+            used_exclusions[src_file.path] = True
+            continue
         src_label_str = bzlws_get_full_label_string(src_file.owner)
         all_src_labels.append(src_label_str)
         args.add(src_label_str)
@@ -116,12 +125,19 @@ def _bzlws_tool_cc_binary(ctx):
                 default_info = src_target[DefaultInfo]
                 if default_info.default_runfiles:
                     for rf in default_info.default_runfiles.files.to_list():
+                        if rf.path in excluded_paths:
+                            used_exclusions[rf.path] = True
+                            continue
                         if rf.path not in primary_files:
                             primary_files[rf.path] = True
                             runfiles_files.append(rf)
                             rf_label_str = bzlws_get_full_label_string(rf.owner)
                             args.add(rf_label_str)
                             args.add(rf.path)
+
+    for excluded_path, f in excluded_paths.items():
+        if excluded_path not in used_exclusions:
+            fail("File {} in 'excludes' was not found in 'srcs'".format(f.short_path))
 
     params_file = ctx.actions.declare_file(ctx.attr.name + ".params")
 
@@ -266,12 +282,17 @@ bzlws_tool_cc_binary = rule(
             allow_empty = False,
             aspects = [bzlws_platform_aspect],
         ),
+        "excludes": attr.label_list(
+            allow_files = True,
+            default = [],
+        ),
         "out": attr.string(mandatory = True),
         "tool": attr.string(mandatory = True),
         "force": attr.bool(default = False),
         "include_runfiles": attr.bool(default = False),
         "deps": attr.label_list(providers = [CcInfo], allow_empty = True),
         "strip_filepath_prefix": attr.string(default = "", mandatory = False),
+        "remap_paths": attr.string_dict(default = {}, mandatory = False),
         "metafile_path": attr.string(default = "", mandatory = False),
         "substitutions": attr.label_keyed_string_dict(
             default = {},
