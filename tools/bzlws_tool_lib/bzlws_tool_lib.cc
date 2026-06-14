@@ -938,7 +938,7 @@ namespace {
 		return "\x1b[90m" + s + "\x1b[0m";
 	}
 
-	void print_tree_node(const tree_node& node, const std::string& prefix, int prefix_len, int max_left_len, bool is_last, bool is_root) {
+	void print_tree_node(const tree_node& node, const std::string& prefix, int prefix_len, int max_left_len, bool is_last, bool is_root, const std::string& arrow) {
 		if (!node.name.empty()) {
 			std::string current_line = "";
 			std::string new_prefix = prefix;
@@ -957,7 +957,7 @@ namespace {
 				int padding = max_left_len - display_len + 2; 
 				if (padding < 2) padding = 2;
 				std::string pad_str(padding, ' ');
-				std::cout << current_line << pad_str << grey("<- ") << node.src_path << std::endl;
+				std::cout << current_line << pad_str << grey(arrow) << node.src_path << std::endl;
 			} else {
 				std::cout << current_line << std::endl;
 			}
@@ -966,20 +966,20 @@ namespace {
 			int total = node.children.size();
 			for (const auto& pair : node.children) {
 				count++;
-				print_tree_node(pair.second, new_prefix, new_prefix_len, max_left_len, count == total, false);
+				print_tree_node(pair.second, new_prefix, new_prefix_len, max_left_len, count == total, false, arrow);
 			}
 		} else {
 			int count = 0;
 			int total = node.children.size();
 			for (const auto& pair : node.children) {
 				count++;
-				print_tree_node(pair.second, "", 0, max_left_len, count == total, true);
+				print_tree_node(pair.second, "", 0, max_left_len, count == total, true, arrow);
 			}
 		}
 	}
 }
 
-void bzlws_tool_lib::print_bzlws_tree(const std::vector<std::pair<std::string, std::string>>& items) {
+void bzlws_tool_lib::print_bzlws_tree(const std::vector<std::pair<std::string, std::string>>& items, const std::string& arrow) {
 	if (items.empty()) return;
 	tree_node root;
 	for (const auto& item : items) {
@@ -997,5 +997,5 @@ void bzlws_tool_lib::print_bzlws_tree(const std::vector<std::pair<std::string, s
 	compress_tree(root);
 
 	int max_left_len = get_max_left_len(root, 0);
-	print_tree_node(root, "", 0, max_left_len, true, true);
+	print_tree_node(root, "", 0, max_left_len, true, true, arrow);
 }

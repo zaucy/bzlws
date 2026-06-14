@@ -96,7 +96,7 @@ int bzlws_link
 		}
 	}
 
-	print_bzlws_tree(print_items);
+	print_bzlws_tree(print_items, "<-> ");
 
 	if(!options.metafile_path.empty()) {
 		bzlws_tool_lib::write_generated_metadata_file(

@@ -131,5 +131,6 @@ namespace bzlws_tool_lib {
 
 	void print_bzlws_tree
 		( const std::vector<std::pair<std::string, std::string>>& items
+		, const std::string& arrow = "<- "
 		);
 }
