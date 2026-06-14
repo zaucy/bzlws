@@ -259,6 +259,20 @@ fs::path bzlws_tool_lib::get_src_out_path
 	auto ext_str = src_path.extension().string();
 	auto extname = ext_str.empty() ? "" : ext_str.substr(1);
 	auto filepath = bzl_file_path;
+
+	// NOTE: this is kind of a hack, I'm not sure if there's a better way to detect this.
+	// Strip bazel-out/<config>/<tree>/ prefix from generated file paths so that
+	// {FILEPATH} is workspace-relative rather than including the output tree.
+	if (filepath.compare(0, 10, "bazel-out/") == 0) {
+		auto second_slash = filepath.find('/', 10);
+		if (second_slash != std::string::npos) {
+			auto third_slash = filepath.find('/', second_slash + 1);
+			if (third_slash != std::string::npos) {
+				filepath = filepath.substr(third_slash + 1);
+			}
+		}
+	}
+
 	if (filepath.compare(0, 9, "external/") == 0) {
 		auto slash_idx = filepath.find('/', 9);
 		if (slash_idx != std::string::npos) {
