@@ -98,10 +98,30 @@ def _bzlws_tool_cc_binary(ctx):
     args.add("--default_target_os", target_os)
     args.add("--default_target_cpu", target_cpu)
 
+    # Collect all files to process (direct srcs + optionally runfiles)
+    all_src_files = list(ctx.files.srcs)
+    all_src_labels = []
     for src_file in ctx.files.srcs:
         src_label_str = bzlws_get_full_label_string(src_file.owner)
+        all_src_labels.append(src_label_str)
         args.add(src_label_str)
         args.add(src_file.path)
+
+    # When include_runfiles is True, collect runfiles from srcs targets
+    runfiles_files = []
+    if ctx.attr.include_runfiles:
+        primary_files = {f.path: True for f in ctx.files.srcs}
+        for src_target in ctx.attr.srcs:
+            if DefaultInfo in src_target:
+                default_info = src_target[DefaultInfo]
+                if default_info.default_runfiles:
+                    for rf in default_info.default_runfiles.files.to_list():
+                        if rf.path not in primary_files:
+                            primary_files[rf.path] = True
+                            runfiles_files.append(rf)
+                            rf_label_str = bzlws_get_full_label_string(rf.owner)
+                            args.add(rf_label_str)
+                            args.add(rf.path)
 
     params_file = ctx.actions.declare_file(ctx.attr.name + ".params")
 
@@ -126,7 +146,7 @@ def _bzlws_tool_cc_binary(ctx):
 
     ctx.actions.run(
         outputs = [src],
-        inputs = ctx.files.srcs + [params_file],
+        inputs = ctx.files.srcs + runfiles_files + [params_file],
         executable = ctx.executable._generator,
         arguments = [action_args],
     )
@@ -175,7 +195,7 @@ def _bzlws_tool_cc_binary(ctx):
     return DefaultInfo(
         files = depset([output.executable]),
         default_runfiles = ctx.runfiles(
-            files = ctx.files.srcs + [output.executable, manifest_file],
+            files = ctx.files.srcs + runfiles_files + [output.executable, manifest_file],
         ),
         executable = output.executable,
     )
@@ -249,6 +269,7 @@ bzlws_tool_cc_binary = rule(
         "out": attr.string(mandatory = True),
         "tool": attr.string(mandatory = True),
         "force": attr.bool(default = False),
+        "include_runfiles": attr.bool(default = False),
         "deps": attr.label_list(providers = [CcInfo], allow_empty = True),
         "strip_filepath_prefix": attr.string(default = "", mandatory = False),
         "metafile_path": attr.string(default = "", mandatory = False),

@@ -1,7 +1,7 @@
 load("//rules/private:bzlws_tool_cc_binary.bzl", "bzlws_tool_cc_binary")
 load("//rules/private:bzlws_util.bzl", "bzlws_check_common_required_attrs")
 
-def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, tags = [], **kwargs):
+def bzlws_copy(name = None, srcs = None, out = None, force = None, include_runfiles = False, strip_filepath_prefix = "", metafile_path = "", substitutions = {}, stamp_substitutions = {}, visibility = None, tags = [], **kwargs):
     """Copy generated files into workspace directory
 
     ```python
@@ -63,6 +63,9 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
 
         force: Overwrite existing paths even if they are not files
 
+        include_runfiles: If True, also copy runfiles (data dependencies) of
+            the srcs targets alongside the primary output files
+
         metafile_path: Path to metafile
 
         substitutions: BzlwsInfo label keyed, string valued, dictionary. The
@@ -88,6 +91,7 @@ def bzlws_copy(name = None, srcs = None, out = None, force = None, strip_filepat
         out = out,
         strip_filepath_prefix = strip_filepath_prefix,
         force = force,
+        include_runfiles = include_runfiles,
         metafile_path = metafile_path,
         substitutions = substitutions,
         stamp_substitutions = stamp_substitutions,
