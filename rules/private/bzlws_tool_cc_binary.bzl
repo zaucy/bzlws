@@ -171,6 +171,8 @@ def _bzlws_tool_cc_binary(ctx):
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
         cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
     )
     variables = cc_common.create_link_variables(
         cc_toolchain = cc_toolchain,
