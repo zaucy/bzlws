@@ -3,10 +3,8 @@ load("@bzlws//rules/private:bzlws_info.bzl", "BzlwsInfo")
 load("@bzlws//rules/private:bzlws_platform_info.bzl", "BzlwsPlatformInfo")
 load("@bzlws//rules/private:bzlws_util.bzl", "bzlws_get_full_label_string")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
-load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
-
-
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
 # Well-known @platforms//os constraint values
 _OS_CONSTRAINT_VALUES = [
@@ -148,6 +146,8 @@ def _bzlws_tool_cc_binary(ctx):
 
     # Resolve target platform constraint values and substitute into out path
     out_path = ctx.attr.out
+    if "COMPILATION_MODE" in ctx.var:
+        out_path = out_path.replace("{COMPILATION_MODE}", ctx.var["COMPILATION_MODE"])
 
     action_args = ctx.actions.args()
 
